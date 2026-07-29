@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Send, Scale, Plus, MessageSquare, History, FileText, ChevronRight, 
   AlertCircle, Sparkles, Search, Copy, Check, Info, BookOpen, Layers,
-  Trash2, Sliders, ExternalLink
+  Trash2, Sliders, ExternalLink, LogOut, User, ShieldCheck
 } from 'lucide-react';
 
 export default function Chat() {
@@ -13,6 +13,13 @@ export default function Chat() {
   const getAuthHeaders = () => {
     const currentToken = localStorage.getItem('token');
     return currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {};
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setProfile(null);
+    window.dispatchEvent(new Event('auth-change'));
+    navigate('/login');
   };
 
   // States
@@ -270,7 +277,8 @@ export default function Chat() {
     <div style={{
       display: 'flex',
       flex: 1,
-      height: 'calc(100vh - 65px)',
+      height: '100vh',
+      width: '100vw',
       background: '#f8fafc',
       overflow: 'hidden'
     }}>
@@ -286,6 +294,35 @@ export default function Chat() {
         height: '100%',
         overflow: 'hidden'
       }}>
+        {/* Brand Logo Header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.65rem',
+          marginBottom: '1.2rem',
+          paddingBottom: '0.8rem',
+          borderBottom: '1px solid #f1f5f9'
+        }}>
+          <div style={{
+            width: '34px',
+            height: '34px',
+            borderRadius: '9px',
+            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 6px rgba(37, 99, 235, 0.2)'
+          }}>
+            <Scale size={19} color="#ffffff" strokeWidth={2.2} />
+          </div>
+          <div>
+            <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <span>LegalAI</span>
+              <span style={{ color: 'var(--accent-primary)' }}>Pro</span>
+            </div>
+          </div>
+        </div>
+
         {/* New Session Button */}
         <button
           onClick={() => handleCreateSession()}
@@ -293,7 +330,7 @@ export default function Chat() {
           style={{ width: '100%', marginBottom: '1.2rem', padding: '0.75rem' }}
         >
           <Plus size={18} />
-          <span>New Consultation</span>
+          <span>New Chat</span>
         </button>
 
         {/* Search Session Filter */}
@@ -349,6 +386,73 @@ export default function Chat() {
               </div>
             );
           })}
+        </div>
+
+        {/* Bottom Sidebar User & Logout Footer */}
+        <div style={{
+          marginTop: 'auto',
+          paddingTop: '0.85rem',
+          borderTop: '1px solid #e2e8f0',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem'
+        }}>
+          {profile?.role === 'admin' && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="btn btn-ghost btn-sm"
+              style={{ width: '100%', justifyContent: 'flex-start', fontSize: '0.82rem', gap: '0.5rem' }}
+            >
+              <ShieldCheck size={16} color="var(--accent-primary)" />
+              <span>Admin Dashboard</span>
+            </button>
+          )}
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.55rem 0.65rem',
+            borderRadius: 'var(--radius-md)',
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', overflow: 'hidden' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: 'rgba(37, 99, 235, 0.1)',
+                border: '1px solid var(--accent-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                color: 'var(--accent-primary)',
+                flexShrink: 0
+              }}>
+                {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : <User size={15} />}
+              </div>
+              <div style={{ overflow: 'hidden' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {profile?.full_name || profile?.email || 'Legal Counsel'}
+                </div>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-subtle)', textTransform: 'uppercase' }}>
+                  {profile?.role || 'User'}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="btn btn-ghost btn-sm"
+              title="Sign Out"
+              style={{ padding: '0.4rem', borderRadius: '50%', flexShrink: 0 }}
+            >
+              <LogOut size={16} color="var(--accent-danger)" />
+            </button>
+          </div>
         </div>
       </aside>
 

@@ -363,7 +363,8 @@ export default function Admin() {
     <div style={{
       display: 'flex',
       flex: 1,
-      height: 'calc(100vh - 65px)',
+      height: '100vh',
+      width: '100vw',
       background: '#f8fafc',
       overflow: 'hidden'
     }}>
@@ -375,7 +376,8 @@ export default function Admin() {
         display: 'flex',
         flexDirection: 'column',
         padding: '1.4rem 1.2rem',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        height: '100%'
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Admin Header Branding */}
@@ -402,6 +404,15 @@ export default function Admin() {
 
           {/* Navigation Menu Links */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            <button
+              onClick={() => navigate('/chat')}
+              className="btn btn-ghost btn-sm"
+              style={{ width: '100%', justifyContent: 'flex-start', fontSize: '0.85rem', marginBottom: '0.6rem', gap: '0.6rem' }}
+            >
+              <FileText size={16} color="var(--accent-primary)" />
+              <span>Back to AI Chat</span>
+            </button>
+
             <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>
               Dashboard Options
             </div>
@@ -409,54 +420,46 @@ export default function Admin() {
             <button
               onClick={() => setActiveTab('dashboard')}
               className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ justifyContent: 'flex-start', padding: '0.7rem 1rem', fontSize: '0.88rem' }}
+              style={{ width: '100%', justifyContent: 'flex-start', fontSize: '0.85rem' }}
             >
-              <LayoutDashboard size={17} />
-              <span>Dashboard Overview</span>
+              <LayoutDashboard size={16} /> Overview
             </button>
 
             <button
               onClick={() => setActiveTab('documents')}
               className={`btn ${activeTab === 'documents' ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ justifyContent: 'flex-start', padding: '0.7rem 1rem', fontSize: '0.88rem' }}
+              style={{ width: '100%', justifyContent: 'flex-start', fontSize: '0.85rem' }}
             >
-              <FolderKanban size={17} />
-              <span>Document Studio ({documents.length})</span>
+              <Database size={16} /> Documents Catalog
             </button>
 
             <button
               onClick={() => setActiveTab('users')}
               className={`btn ${activeTab === 'users' ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ justifyContent: 'flex-start', padding: '0.7rem 1rem', fontSize: '0.88rem' }}
+              style={{ width: '100%', justifyContent: 'flex-start', fontSize: '0.85rem' }}
             >
-              <UserCheck size={17} />
-              <span>User Management ({users.length})</span>
+              <Users size={16} /> User Management
             </button>
 
             <button
               onClick={() => setActiveTab('health')}
               className={`btn ${activeTab === 'health' ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ justifyContent: 'flex-start', padding: '0.7rem 1rem', fontSize: '0.88rem' }}
+              style={{ width: '100%', justifyContent: 'flex-start', fontSize: '0.85rem' }}
             >
-              <Server size={17} />
-              <span>System Health</span>
+              <Activity size={16} /> System Infrastructure
             </button>
           </div>
         </div>
 
-        {/* Sidebar Footer */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
-          <button
-            onClick={() => { fetchDocuments(); fetchUsers(); }}
-            className="btn btn-ghost"
-            style={{ width: '100%', fontSize: '0.82rem' }}
-          >
-            <RefreshCw size={14} /> Sync Database State
-          </button>
+        {/* Bottom Profile Info & Sign Out */}
+        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            Logged in as <strong>{profile?.full_name || profile?.email}</strong>
+          </div>
           <button
             onClick={handleLogout}
-            className="btn btn-danger"
-            style={{ width: '100%', fontSize: '0.82rem' }}
+            className="btn btn-danger btn-sm"
+            style={{ width: '100%', fontSize: '0.8rem' }}
           >
             <LogOut size={14} /> Sign Out Admin
           </button>
