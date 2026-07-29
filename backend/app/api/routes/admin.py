@@ -136,3 +136,24 @@ async def delete_document(
     await session.delete(doc)
     await session.commit()
     return {"status": "success", "message": f"Document {document_id} deleted successfully"}
+
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    session: SessionDep,
+    current_user: SuperUserDep
+):
+    """
+    Delete a user. Superuser only. Cannot delete self.
+    """
+    if current_user.id == user_id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own admin account.")
+
+    result = await session.execute(select(User).where(User.id == user_id))
+    user_to_delete = result.scalar_one_or_none()
+    if not user_to_delete:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await session.delete(user_to_delete)
+    await session.commit()
+    return {"status": "success", "message": f"User {user_id} deleted successfully"}

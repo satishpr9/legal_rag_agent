@@ -190,12 +190,47 @@ export default function Admin() {
       }
 
       setSuccess(`Document "${filename}" deleted successfully.`);
-      setDocuments(prev => prev.filter(doc => doc.id !== docId));
-      await fetchDocuments();
+      // Pure React State Updater for instant reactivity
+      setDocuments(prevDocs => prevDocs.filter(doc => doc.id !== docId));
     } catch (err) {
       setError(err.message);
+      fetchDocuments();
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId, userEmail) => {
+    if (profile?.id === userId) {
+      setError("Cannot delete your own administrator account.");
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to delete user account "${userEmail}"?`)) {
+      return;
+    }
+
+    setError('');
+    setSuccess('');
+
+    // Pure React State Updater for instant reactivity
+    setUsers(prevUsers => prevUsers.filter(u => u.id !== userId));
+
+    try {
+      const res = await fetch(`http://localhost:8000/api/v1/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || 'Failed to delete user');
+      }
+
+      setSuccess(`User "${userEmail}" deleted successfully.`);
+    } catch (err) {
+      setError(err.message);
+      fetchUsers();
     }
   };
 
@@ -755,7 +790,8 @@ export default function Admin() {
                   <tr style={{ borderBottom: '1px solid #e2e8f0', textAlign: 'left', color: 'var(--text-muted)' }}>
                     <th style={{ padding: '0.75rem 0.5rem', fontWeight: 700 }}>Full Name</th>
                     <th style={{ padding: '0.75rem 0.5rem', fontWeight: 700 }}>Email Address</th>
-                    <th style={{ padding: '0.75rem 0.5rem', fontWeight: 700, textAlign: 'right' }}>System Role</th>
+                    <th style={{ padding: '0.75rem 0.5rem', fontWeight: 700 }}>System Role</th>
+                    <th style={{ padding: '0.75rem 0.5rem', fontWeight: 700, textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -764,16 +800,28 @@ export default function Admin() {
                       <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                         <td style={{ padding: '0.85rem 0.5rem', fontWeight: 700, color: '#0f172a' }}>{u.full_name || 'User'}</td>
                         <td style={{ padding: '0.85rem 0.5rem', color: 'var(--text-muted)' }}>{u.email}</td>
-                        <td style={{ padding: '0.85rem 0.5rem', textAlign: 'right' }}>
+                        <td style={{ padding: '0.85rem 0.5rem' }}>
                           <span className={`badge ${u.role === 'admin' ? 'badge-gold' : 'badge-blue'}`}>
                             {u.role}
                           </span>
+                        </td>
+                        <td style={{ padding: '0.85rem 0.5rem', textAlign: 'right' }}>
+                          {profile?.id !== u.id && (
+                            <button
+                              onClick={() => handleDeleteUser(u.id, u.email)}
+                              className="btn btn-danger btn-sm"
+                              title="Delete User Account"
+                            >
+                              <Trash2 size={13} />
+                              <span>Delete</span>
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={3} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-subtle)' }}>
+                      <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-subtle)' }}>
                         No matching users found in directory.
                       </td>
                     </tr>

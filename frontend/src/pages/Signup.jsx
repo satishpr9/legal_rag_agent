@@ -211,7 +211,6 @@ export default function Signup() {
               >
                 <option value="associate">Associate Lawyer</option>
                 <option value="partner">Firm Partner</option>
-                <option value="admin">System Administrator (Admin)</option>
               </select>
             </div>
 

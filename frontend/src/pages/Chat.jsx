@@ -139,7 +139,14 @@ export default function Chat() {
 
   const handleSendMessage = async (textToSend = userInput) => {
     const text = typeof textToSend === 'string' ? textToSend : userInput;
-    if (!text.trim() || !activeSession || sending) return;
+    if (!text.trim() || sending) return;
+
+    if (!localStorage.getItem('token')) {
+      navigate('/login');
+      return;
+    }
+
+    if (!activeSession) return;
 
     setUserInput('');
     setSending(true);
