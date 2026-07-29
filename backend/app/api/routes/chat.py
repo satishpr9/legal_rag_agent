@@ -110,3 +110,24 @@ async def send_message_stream(
         media_type="text/event-stream"
     )
 
+@router.delete("/sessions/{session_id}")
+async def delete_chat_session(
+    session_id: int,
+    session: SessionDep,
+    current_user: CurrentUser
+):
+    """
+    Delete a chat session and all associated messages.
+    """
+    check_not_admin(current_user)
+    session_result = await session.execute(
+        select(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == current_user.id)
+    )
+    chat_session = session_result.scalar_one_or_none()
+    if not chat_session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+        
+    await session.delete(chat_session)
+    await session.commit()
+    return {"message": "Session deleted successfully", "id": session_id}
+

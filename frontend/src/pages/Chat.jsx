@@ -140,6 +140,34 @@ export default function Chat() {
     }
   };
 
+  const handleDeleteSession = async (sessionId, e) => {
+    if (e) e.stopPropagation();
+    try {
+      const headers = getAuthHeaders();
+      const res = await fetch(`http://localhost:8000/api/v1/chat/sessions/${sessionId}`, {
+        method: 'DELETE',
+        headers
+      });
+      if (!res.ok) throw new Error('Failed to delete chat session');
+
+      setSessions(prev => {
+        const updated = prev.filter(s => s.id !== sessionId);
+        if (activeSession?.id === sessionId) {
+          if (updated.length > 0) {
+            setActiveSession(updated[0]);
+          } else {
+            setActiveSession(null);
+            setMessages([]);
+            handleCreateSession("New Chat");
+          }
+        }
+        return updated;
+      });
+    } catch (err) {
+      setError(err.message || 'Failed to delete chat session');
+    }
+  };
+
   const handleSendMessage = async (textToSend = userInput) => {
     const text = typeof textToSend === 'string' ? textToSend : userInput;
     if (!text.trim() || sending) return;
@@ -359,7 +387,7 @@ export default function Chat() {
                 key={s.id}
                 onClick={() => setActiveSession(s)}
                 style={{
-                  padding: '0.65rem 0.85rem',
+                  padding: '0.6rem 0.85rem',
                   borderRadius: 'var(--radius-md)',
                   cursor: 'pointer',
                   transition: 'var(--transition-fast)',
@@ -383,6 +411,29 @@ export default function Chat() {
                 }}>
                   {s.title}
                 </span>
+
+                <button
+                  type="button"
+                  onClick={(e) => handleDeleteSession(s.id, e)}
+                  title="Delete Consultation"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '0.2rem 0.3rem',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: 0.6,
+                    transition: 'all 0.15s ease',
+                    flexShrink: 0
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(220, 38, 38, 0.1)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <Trash2 size={13} color="var(--accent-danger)" />
+                </button>
               </div>
             );
           })}
