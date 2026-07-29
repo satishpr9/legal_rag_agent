@@ -172,60 +172,81 @@ export default function Chat() {
 
     try {
       const headers = { 'Content-Type': 'application/json', ...getAuthHeaders() };
-      const response = await fetch(`http://localhost:8000/api/v1/chat/sessions/${activeSession.id}/messages/stream`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ content: text })
-      });
+      
+      let isStreamSuccessful = false;
+      try {
+        const response = await fetch(`http://localhost:8000/api/v1/chat/sessions/${activeSession.id}/messages/stream`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ content: text })
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'AI Inference error. Verify backend server logs.');
-      }
+        if (response.ok && response.body) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder('utf-8');
+          let buffer = '';
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith('data: ')) {
-            const dataStr = trimmed.slice(6);
-            if (!dataStr) continue;
-            try {
-              const event = JSON.parse(dataStr);
-              if (event.type === 'metadata') {
-                setMessages(prev => prev.map(m => 
-                  m.id === tempAssistantMsgId 
-                    ? { ...m, retrieved_context: event.retrieved_context, confidence_level: event.confidence_level }
-                    : m
-                ));
-              } else if (event.type === 'chunk') {
-                setMessages(prev => prev.map(m => 
-                  m.id === tempAssistantMsgId 
-                    ? { ...m, content: m.content + event.content }
-                    : m
-                ));
-              } else if (event.type === 'done') {
-                setMessages(prev => prev.map(m => 
-                  m.id === tempAssistantMsgId 
-                    ? { ...m, id: event.message_id, isStreaming: false }
-                    : m
-                ));
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith('data: ')) {
+                const dataStr = trimmed.slice(6);
+                if (!dataStr) continue;
+                try {
+                  const event = JSON.parse(dataStr);
+                  if (event.type === 'metadata') {
+                    setMessages(prev => prev.map(m => 
+                      m.id === tempAssistantMsgId 
+                        ? { ...m, retrieved_context: event.retrieved_context, confidence_level: event.confidence_level }
+                        : m
+                    ));
+                  } else if (event.type === 'chunk') {
+                    setMessages(prev => prev.map(m => 
+                      m.id === tempAssistantMsgId 
+                        ? { ...m, content: m.content + event.content }
+                        : m
+                    ));
+                  } else if (event.type === 'done') {
+                    setMessages(prev => prev.map(m => 
+                      m.id === tempAssistantMsgId 
+                        ? { ...m, id: event.message_id, isStreaming: false }
+                        : m
+                    ));
+                  }
+                } catch (e) {
+                  // Ignore line parse errors
+                }
               }
-            } catch (e) {
-              // Ignore line parse errors
             }
           }
+          isStreamSuccessful = true;
         }
+      } catch (streamErr) {
+        console.warn("Streaming connection dropped or unavailable, falling back to standard HTTP POST...", streamErr);
+      }
+
+      // If streaming was not successful or failed, fallback to standard POST
+      if (!isStreamSuccessful) {
+        const fallbackRes = await fetch(`http://localhost:8000/api/v1/chat/sessions/${activeSession.id}/messages`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ content: text })
+        });
+
+        if (!fallbackRes.ok) {
+          const errorData = await fallbackRes.json().catch(() => ({}));
+          throw new Error(errorData.detail || 'Failed to generate response. Please check server logs.');
+        }
+
+        const data = await fallbackRes.json();
+        setMessages(prev => prev.map(m => m.id === tempAssistantMsgId ? data : m));
       }
     } catch (err) {
       setError(err.message);
@@ -261,7 +282,9 @@ export default function Chat() {
         borderRight: '1px solid #e2e8f0',
         display: 'flex',
         flexDirection: 'column',
-        padding: '1.25rem'
+        padding: '1.25rem',
+        height: '100%',
+        overflow: 'hidden'
       }}>
         {/* New Session Button */}
         <button
@@ -334,6 +357,9 @@ export default function Chat() {
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
+        height: '100%',
+        minHeight: 0,
+        overflow: 'hidden',
         position: 'relative',
         background: '#f8fafc'
       }}>
@@ -344,7 +370,8 @@ export default function Chat() {
           background: '#ffffff',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          flexShrink: 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div style={{
@@ -377,6 +404,7 @@ export default function Chat() {
         {/* Message Thread */}
         <div style={{
           flex: 1,
+          minHeight: 0,
           padding: '1.8rem',
           overflowY: 'auto',
           display: 'flex',
@@ -588,9 +616,11 @@ export default function Chat() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* CHATGPT-STYLE FLOATING INPUT CONTAINER */}
+        {/* CHATGPT-STYLE FLOATING INPUT CONTAINER - PERMANENTLY PINNED AT BOTTOM */}
         <div style={{
-          padding: '1rem 1.5rem 1.2rem',
+          flexShrink: 0,
+          width: '100%',
+          padding: '0.8rem 1.5rem 1rem',
           background: 'transparent',
           display: 'flex',
           flexDirection: 'column',
