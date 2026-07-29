@@ -28,16 +28,16 @@ class DocumentIngestionManager:
 
         try:
             # Step 1: Update status to processing
-            doc_meta.status = "processing"
+            doc_meta.status = "processing 0%"
             await self.db.commit()
 
-            # Step 2: Parse File
-            text = DocumentParser.parse_file(file_path)
-            if not text.strip():
+            # Step 2: Parse File Pages
+            pages = DocumentParser.parse_file_pages(file_path)
+            if not pages or not any(p["text"].strip() for p in pages):
                 raise ValueError("Parsed document is empty")
 
-            # Step 3: Chunk Text
-            chunks = LegalChunker.split_text(text)
+            # Step 3: Chunk Text with Page Tracking
+            chunks = LegalChunker.split_pages(pages)
 
             # Step 4: Batch Embed Chunks (Gemini limits batch size to 100)
             chunk_texts = [c["text"] for c in chunks]
@@ -51,6 +51,10 @@ class DocumentIngestionManager:
                 batch_texts = chunk_texts[i:i + batch_size]
                 batch_embeddings = await self.emb_client.get_embeddings_batch(batch_texts)
                 embeddings.extend(batch_embeddings)
+                
+                progress = int((len(embeddings) / len(chunk_texts)) * 100)
+                doc_meta.status = f"processing {progress}%"
+                await self.db.commit()
 
             # Step 5: Prepare Qdrant Points
             collection_name = "legal_documents"
@@ -63,8 +67,10 @@ class DocumentIngestionManager:
                     "vector": embeddings[idx],
                     "payload": {
                         "document_id": doc_meta.id,
+                        "filename": doc_meta.filename,
                         "text": chunk["text"],
                         "estimated_section": chunk["metadata"]["estimated_section"],
+                        "page_number": chunk["metadata"].get("page_number", 1),
                         "chunk_index": chunk["metadata"]["chunk_index"]
                     }
                 })

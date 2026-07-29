@@ -35,7 +35,7 @@ async def ingest_document(
     # Create document metadata
     db_doc = DocumentMetadata(
         filename=ingest_in.filename,
-        status="pending"
+        status="processing 0%"
     )
     session.add(db_doc)
     await session.commit()
@@ -93,7 +93,7 @@ async def upload_document(
     # Create document metadata
     db_doc = DocumentMetadata(
         filename=file.filename,
-        status="pending"
+        status="processing 0%"
     )
     session.add(db_doc)
     await session.commit()

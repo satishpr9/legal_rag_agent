@@ -69,9 +69,6 @@ export default function Chat() {
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
-        if (data.role === 'admin') {
-          navigate('/admin');
-        }
       }
     } catch (err) {}
   };
@@ -83,8 +80,7 @@ export default function Chat() {
     try {
       const res = await fetch('http://localhost:8000/api/v1/chat/sessions', { headers: getAuthHeaders() });
       if (res.status === 403) {
-        navigate('/admin');
-        return;
+        throw new Error('Access denied');
       }
       if (!res.ok) throw new Error('Failed to load chat history');
       const data = await res.json();
@@ -352,13 +348,25 @@ export default function Chat() {
           {messages.length > 0 ? (
             messages.map((msg, idx) => {
               const isUser = msg.role === 'user';
+              const confidence = msg.confidence_level || 'Medium';
+
+              const getConfidenceBadge = (level) => {
+                if (level === 'High') {
+                  return <span className="badge badge-success" style={{ fontSize: '0.68rem', padding: '0.15rem 0.5rem' }} title="High confidence grounding from indexed legal documents">High Confidence</span>;
+                } else if (level === 'Medium') {
+                  return <span className="badge badge-gold" style={{ fontSize: '0.68rem', padding: '0.15rem 0.5rem' }} title="Medium confidence grounding from partial legal document matches">Medium Confidence</span>;
+                } else {
+                  return <span className="badge badge-blue" style={{ fontSize: '0.68rem', padding: '0.15rem 0.5rem' }} title="Low confidence - synthesized primarily from general AI model knowledge">Low Confidence</span>;
+                }
+              };
+
               return (
                 <div
                   key={msg.id || idx}
                   className="animate-fade-in"
                   style={{
                     alignSelf: isUser ? 'flex-end' : 'flex-start',
-                    maxWidth: '82%',
+                    maxWidth: '84%',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0.4rem'
@@ -374,6 +382,7 @@ export default function Chat() {
                     }}>
                       {isUser ? (profile?.full_name || 'Counsel') : 'LegalAI Assistant'}
                     </span>
+                    {!isUser && getConfidenceBadge(confidence)}
                   </div>
 
                   <div className="glass-card" style={{
@@ -391,6 +400,24 @@ export default function Chat() {
                     }}>
                       {msg.content}
                     </div>
+
+                    {!isUser && (
+                      <div style={{
+                        marginTop: '0.85rem',
+                        padding: '0.55rem 0.8rem',
+                        background: 'rgba(245, 158, 11, 0.05)',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid rgba(245, 158, 11, 0.2)',
+                        fontSize: '0.73rem',
+                        color: '#92400e',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.45rem'
+                      }}>
+                        <Info size={14} style={{ flexShrink: 0 }} />
+                        <span><strong>Legal Disclaimer:</strong> Informational and legal research purposes only; not a substitute for professional legal advice. Independently verify statutory sections and PDF page numbers.</span>
+                      </div>
+                    )}
 
                     {/* Bottom Metadata & Actions */}
                     <div style={{
@@ -457,7 +484,7 @@ export default function Chat() {
                 Legal AI Consultation Hub
               </h3>
               <p style={{ color: 'var(--text-muted)', maxWidth: '520px', fontSize: '0.92rem', marginBottom: '2rem' }}>
-                Ask complex statutory questions, review contracts for liability risks, or extract statutory citations grounded in indexed document repositories.
+                Ask complex statutory questions, review contracts for liability risks, or extract statutory citations grounded in indexed document repositories with PDF page references.
               </p>
 
               <div style={{
@@ -554,7 +581,7 @@ export default function Chat() {
       {/* RIGHT SIDEBAR: Citation & Document Source Inspector */}
       {isRefPanelOpen && activeReferences && (
         <aside className="glass-card animate-fade-in" style={{
-          width: '380px',
+          width: '400px',
           borderRadius: 0,
           borderTop: 'none',
           borderBottom: 'none',
@@ -586,9 +613,18 @@ export default function Chat() {
                 className="glass-card"
                 style={{ padding: '1rem', background: '#f8fafc', borderColor: '#e2e8f0' }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                {/* Source Filename Header */}
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem', wordBreak: 'break-word' }}>
+                  <FileText size={14} color="var(--accent-primary)" />
+                  <span>{ref.filename || `Document #${ref.document_id}`}</span>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginBottom: '0.6rem' }}>
                   <span className="badge badge-gold" style={{ fontSize: '0.7rem' }}>
                     Section: {ref.estimated_section || 'General'}
+                  </span>
+                  <span className="badge" style={{ fontSize: '0.7rem', background: 'rgba(147, 51, 234, 0.1)', color: '#7e22ce', border: '1px solid rgba(147, 51, 234, 0.2)' }}>
+                    Page {ref.page_number || 1}
                   </span>
                   <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>
                     {Math.round((ref.score || 0.88) * 100)}% Match
@@ -612,8 +648,8 @@ export default function Chat() {
                 </p>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-subtle)' }}>
-                  <span>Document ID: #{ref.document_id}</span>
-                  <span>Chunk Index: #{ref.chunk_index}</span>
+                  <span>Doc ID: #{ref.document_id || 'N/A'}</span>
+                  <span>Chunk: #{ref.chunk_index}</span>
                 </div>
               </div>
             ))}

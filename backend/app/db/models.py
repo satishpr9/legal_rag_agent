@@ -28,7 +28,7 @@ class DocumentMetadata(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=False)
     qdrant_collection_name = Column(String)
-    status = Column(String, default="pending") # pending, processing, completed, failed
+    status = Column(String, default="processing 0%") # processing X%, completed, failed
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class ChatSession(Base):
@@ -49,6 +49,7 @@ class ChatMessage(Base):
     session_id = Column(Integer, ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False)
     role = Column(String, nullable=False) # "user" or "model"
     content = Column(String, nullable=False)
+    confidence_level = Column(String, nullable=True, default="Medium") # "High", "Medium", "Low"
     retrieved_context = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     

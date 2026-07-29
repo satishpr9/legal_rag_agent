@@ -21,6 +21,8 @@ class ChatMessageResponse(BaseModel):
     session_id: int
     role: str
     content: str
+    confidence_level: Optional[str] = "Medium"
+    disclaimer: Optional[str] = "Disclaimer: Response is for informational and legal research purposes only and does not constitute formal legal advice."
     retrieved_context: Optional[list[dict[str, Any]]] = None
     created_at: datetime
 

@@ -79,7 +79,7 @@ async def test_document_ingestion_api_endpoint(async_client: AsyncClient, admin_
             headers=ws_headers
         )
         assert ingest_response.status_code == 200
-        assert ingest_response.json()["status"] == "pending"
+        assert ingest_response.json()["status"] in ["pending", "processing 0%"]
         
         # Verify background task was scheduled
         mock_ingest.assert_called_once()
@@ -102,7 +102,7 @@ async def test_document_upload_api_endpoint(async_client: AsyncClient, admin_tok
         )
         assert upload_response.status_code == 200
         assert upload_response.json()["filename"] == "merger.txt"
-        assert upload_response.json()["status"] == "pending"
+        assert upload_response.json()["status"] in ["pending", "processing 0%"]
 
         # Verify background task was scheduled
         mock_ingest.assert_called_once()

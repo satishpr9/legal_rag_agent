@@ -5,17 +5,24 @@ from fastapi import HTTPException
 
 class DocumentParser:
     @staticmethod
-    def parse_pdf(file_path: str) -> str:
+    def parse_pdf_pages(file_path: str) -> list[dict[str, any]]:
         try:
             reader = PdfReader(file_path)
-            text = ""
-            for page in reader.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    text += page_text + "\n"
-            return text
+            pages = []
+            for idx, page in enumerate(reader.pages):
+                page_text = page.extract_text() or ""
+                pages.append({
+                    "page_number": idx + 1,
+                    "text": page_text
+                })
+            return pages
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Failed to parse PDF: {str(e)}")
+
+    @staticmethod
+    def parse_pdf(file_path: str) -> str:
+        pages = DocumentParser.parse_pdf_pages(file_path)
+        return "\n".join(p["text"] for p in pages if p["text"])
 
     @staticmethod
     def parse_docx(file_path: str) -> str:
@@ -50,3 +57,19 @@ class DocumentParser:
             return cls.parse_txt(file_path)
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported file format: {ext}")
+
+    @classmethod
+    def parse_file_pages(cls, file_path: str) -> list[dict[str, any]]:
+        """
+        Parses a document into page-level dictionaries: [{"page_number": 1, "text": "..."}]
+        """
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext == ".pdf":
+            return cls.parse_pdf_pages(file_path)
+        else:
+            text = cls.parse_file(file_path)
+            return [{"page_number": 1, "text": text}]
+

@@ -8,11 +8,7 @@ from sqlalchemy.future import select
 router = APIRouter()
 
 def check_not_admin(user):
-    if user.role == RoleEnum.admin:
-        raise HTTPException(
-            status_code=403,
-            detail="Admin users are restricted from using chat functionality. Please use the Admin Console."
-        )
+    pass
 
 @router.post("/sessions", response_model=ChatSessionResponse)
 async def create_chat_session(

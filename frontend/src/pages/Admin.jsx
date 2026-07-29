@@ -39,6 +39,19 @@ export default function Admin() {
     }
   }, [token]);
 
+  useEffect(() => {
+    if (!profile) return;
+    
+    const isProcessing = documents.some(doc => doc.status && doc.status.includes('processing'));
+    if (!isProcessing) return;
+    
+    const intervalId = setInterval(() => {
+      fetchDocuments();
+    }, 2500);
+    
+    return () => clearInterval(intervalId);
+  }, [profile, documents]);
+
   const fetchProfile = async () => {
     try {
       const res = await fetch('http://localhost:8000/api/v1/auth/me', {
@@ -170,9 +183,6 @@ export default function Admin() {
   };
 
   const handleDeleteDocument = async (docId, filename) => {
-    if (!window.confirm(`Are you sure you want to permanently delete "${filename}" and purge its vectors?`)) {
-      return;
-    }
 
     setDeletingId(docId);
     setError('');
@@ -621,7 +631,7 @@ export default function Admin() {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: '#f8fafc', borderRadius: 'var(--radius-md)', border: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Pending / Processing</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Processing</span>
                     <span className="badge badge-gold">{documents.filter(d => d.status !== 'completed' && d.status !== 'failed').length} Documents</span>
                   </div>
 

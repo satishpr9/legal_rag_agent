@@ -26,7 +26,7 @@ async def test_legal_chat_synthesis_loop(async_client: AsyncClient, user_token, 
     qdrant = QdrantService()
     collection_name = "legal_documents"
     
-    mock_vector = [0.25] * 768
+    mock_vector = [0.25] * 384
     clause_payload = {
         "document_id": doc_meta.id,
         "text": "Clause 8.3: Governing Law. This Agreement shall be governed by the laws of the State of Delaware.",
@@ -70,8 +70,11 @@ async def test_legal_chat_synthesis_loop(async_client: AsyncClient, user_token, 
         msg_data = msg_res.json()
         assert msg_data["role"] == "model"
         assert "Delaware" in msg_data["content"]
+        assert msg_data["confidence_level"] in ["High", "Medium", "Low"]
         assert len(msg_data["retrieved_context"]) > 0
         assert msg_data["retrieved_context"][0]["estimated_section"] == "Clause 8.3"
+        assert "filename" in msg_data["retrieved_context"][0]
+        assert "page_number" in msg_data["retrieved_context"][0]
 
         # 6. Verify Chat Log History in Postgres
         db_session.expire_all()
@@ -82,6 +85,7 @@ async def test_legal_chat_synthesis_loop(async_client: AsyncClient, user_token, 
         assert len(history) == 2  # User query + Assistant RAG answer
         assert history[0].role == "user"
         assert history[1].role == "model"
+        assert history[1].confidence_level in ["High", "Medium", "Low"]
         assert history[1].retrieved_context[0]["estimated_section"] == "Clause 8.3"
 
     # Clean up Qdrant

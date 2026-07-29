@@ -57,24 +57,43 @@ class LegalChatService:
             limit=5
         )
 
-        # Step 3: Format the context text for the System Prompt
+        # Step 3: Format the context text for the System Prompt (with Document Name, Section, and Page Number)
         formatted_context = ""
         for i, chunk in enumerate(retrieved_chunks):
+            doc_name = chunk.get("filename") or f"Document #{chunk.get('document_id')}"
+            sec = chunk.get("estimated_section", "General")
+            page = chunk.get("page_number", 1)
             formatted_context += f"--- Source Chunk {i+1} ---\n"
-            formatted_context += f"Section: {chunk['estimated_section']}\n"
+            formatted_context += f"Document: {doc_name}\n"
+            formatted_context += f"Section: {sec}\n"
+            formatted_context += f"Page: {page}\n"
             formatted_context += f"Content: {chunk['text']}\n\n"
 
+        # Compute Confidence Level based on retrieval scores
+        if retrieved_chunks and len(retrieved_chunks) > 0:
+            top_score = retrieved_chunks[0].get("score", 0.0)
+            if top_score >= 0.70:
+                confidence_level = "High"
+            elif top_score >= 0.45:
+                confidence_level = "Medium"
+            else:
+                confidence_level = "Low"
+        else:
+            confidence_level = "Low"
+
         # Step 4: Construct the legal RAG system prompt
+        context_block = f"Here is the retrieved legal context from the workspace:\n{formatted_context}\n" if formatted_context.strip() else "No direct matching document chunks found in workspace retrieval.\n"
+        
         system_instruction = (
-            "You are a highly experienced and meticulous Legal AI Assistant. Your goal is to help "
-            "lawyers analyze contracts, documents, and case laws with absolute precision.\n\n"
-            f"Here is the retrieved legal context from the workspace:\n{formatted_context}\n"
+            "You are a highly experienced and meticulous Legal AI Assistant specializing in statutory laws, contracts, and legal analysis.\n\n"
+            f"{context_block}"
             "Instructions:\n"
-            "1. Answer the user's query using ONLY the provided Retrieved Context.\n"
-            "2. If the context does not contain the answer, say 'I cannot find the answer in the provided documents.' "
-            "Do not invent facts or hallucinate.\n"
-            "3. Be highly professional, clear, and organize your response carefully using bullet points and bolding.\n"
-            "4. When citing information, explicitly reference the specific Section/Clause (e.g., 'According to Section 4.2...')."
+            "1. Primary Source & Citation: Ground your analysis in the provided Retrieved Context whenever available. "
+            "When referencing specific provisions from the context, explicitly cite the Document name, Section/Clause, and Page number if provided (e.g., 'According to Bharatiya Nyaya Sanhita, Section 4 (Page 12)...').\n"
+            "2. General Knowledge & Definitions: If the retrieved context is empty or incomplete for general legal definitions, statutory background (such as explaining abbreviations like BNS / Bharatiya Nyaya Sanhita, IPC, BNSS, BSA, etc.), or standard legal concepts, provide a clear, accurate, and professional legal overview using established legal knowledge. Clearly distinguish between workspace document citations and general legal background.\n"
+            "3. Precision & Anti-Hallucination: Do not fabricate specific clause numbers or invent non-existent file references when citing workspace documents.\n"
+            "4. Formatting: Be highly professional, concise, and structure your response with clear headers, bullet points, and bold key terms.\n"
+            "5. Legal Disclaimer: Keep in mind that all responses are provided for informational and legal research purposes."
         )
 
         # Step 5: Save the user's message to Postgres
@@ -95,11 +114,12 @@ class LegalChatService:
             system_instruction=system_instruction
         )
 
-        # Step 8: Save assistant response (along with retrieved context payloads!) to Postgres
+        # Step 8: Save assistant response (along with retrieved context payloads & confidence level!) to Postgres
         assistant_message = ChatMessage(
             session_id=session_id,
             role="model",
             content=assistant_content,
+            confidence_level=confidence_level,
             retrieved_context=retrieved_chunks
         )
         self.db.add(assistant_message)
