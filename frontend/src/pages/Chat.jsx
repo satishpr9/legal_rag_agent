@@ -572,11 +572,12 @@ export default function Chat() {
                     {!isUser && getConfidenceBadge(confidence)}
                   </div>
 
-                  <div className="glass-card" style={{
-                    padding: '1.2rem 1.4rem',
-                    background: isUser ? '#eff6ff' : '#ffffff',
-                    borderColor: isUser ? '#bfdbfe' : '#e2e8f0',
-                    borderRadius: isUser ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
+                  <div className={isUser ? "glass-card" : ""} style={{
+                    padding: isUser ? '1rem 1.25rem' : '0.2rem 0',
+                    background: isUser ? '#eff6ff' : 'transparent',
+                    border: isUser ? '1px solid #bfdbfe' : 'none',
+                    boxShadow: isUser ? undefined : 'none',
+                    borderRadius: isUser ? '16px 16px 2px 16px' : '0',
                     position: 'relative'
                   }}>
                     <div style={{
