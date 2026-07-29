@@ -108,3 +108,31 @@ async def upload_document(
     )
 
     return db_doc
+
+@router.delete("/documents/{document_id}")
+async def delete_document(
+    document_id: int,
+    session: SessionDep,
+    current_user: SuperUserDep
+):
+    """
+    Delete a document from DB and purge vectors from Qdrant. Superuser only.
+    """
+    result = await session.execute(select(DocumentMetadata).where(DocumentMetadata.id == document_id))
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # Purge vectors from Qdrant
+    try:
+        from app.services.qdrant_service import QdrantService
+        from app.core.config import settings
+        qdrant_service = QdrantService()
+        collection_name = doc.qdrant_collection_name or settings.QDRANT_COLLECTION_NAME
+        await qdrant_service.delete_document_points(collection_name, document_id)
+    except Exception:
+        pass
+
+    await session.delete(doc)
+    await session.commit()
+    return {"status": "success", "message": f"Document {document_id} deleted successfully"}

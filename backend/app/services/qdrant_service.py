@@ -88,3 +88,22 @@ class QdrantService:
         }
         res = await self._request("POST", f"/collections/{collection_name}/points/search", payload)
         return res.get("result", [])
+
+    async def delete_document_points(self, collection_name: str, document_id: int) -> bool:
+        exists = await self.collection_exists(collection_name)
+        if not exists:
+            return True
+        payload = {
+            "filter": {
+                "must": [
+                    {
+                        "key": "document_id",
+                        "match": {
+                            "value": document_id
+                        }
+                    }
+                ]
+            }
+        }
+        res = await self._request("POST", f"/collections/{collection_name}/points/delete?wait=true", payload)
+        return res.get("status") == "ok"
