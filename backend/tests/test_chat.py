@@ -90,3 +90,37 @@ async def test_legal_chat_synthesis_loop(async_client: AsyncClient, user_token, 
 
     # Clean up Qdrant
     await qdrant.delete_collection(collection_name)
+
+@pytest.mark.asyncio
+async def test_legal_chat_streaming_loop(async_client: AsyncClient, user_token, db_session, regular_user):
+    """
+    Test verifying real-time SSE streaming chat endpoint /messages/stream.
+    """
+    headers = {"Authorization": f"Bearer {user_token}"}
+    session_res = await async_client.post(
+        "/api/v1/chat/sessions",
+        json={"title": "Streaming Consultation"},
+        headers=headers
+    )
+    assert session_res.status_code == 200
+    session_id = session_res.json()["id"]
+
+    async def mock_stream_gen(messages, system_instruction):
+        yield "Delaware "
+        yield "law."
+
+    with mock.patch("app.services.embedding.GeminiEmbeddingClient.get_embedding", return_value=[0.1]*384), \
+         mock.patch("app.services.gemini_chat.GeminiChatClient.generate_response_stream", side_effect=mock_stream_gen):
+        
+        msg_res = await async_client.post(
+            f"/api/v1/chat/sessions/{session_id}/messages/stream",
+            json={"content": "Streaming test prompt"},
+            headers=headers
+        )
+        assert msg_res.status_code == 200
+        assert "text/event-stream" in msg_res.headers["content-type"]
+        body_text = msg_res.text
+        assert "metadata" in body_text
+        assert "chunk" in body_text
+        assert "done" in body_text
+

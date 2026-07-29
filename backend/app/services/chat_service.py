@@ -127,3 +127,120 @@ class LegalChatService:
         await self.db.refresh(assistant_message)
 
         return assistant_message
+
+    async def process_message_stream(
+        self,
+        session_id: int,
+        user_id: int,
+        user_content: str
+    ):
+        """
+        Executes the RAG-grounded chat loop with real-time SSE token streaming.
+        Yields JSON formatted SSE strings: data: {...}\n\n
+        """
+        import json
+
+        # Step 1: Verify session ownership
+        session_result = await self.db.execute(
+            select(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == user_id)
+        )
+        chat_session = session_result.scalar_one_or_none()
+        if not chat_session:
+            raise HTTPException(status_code=404, detail="Chat session not found")
+
+        # Step 2: Retrieve relevant legal context from Qdrant
+        retrieved_chunks = await self.retrieval_service.retrieve_context(
+            query=user_content,
+            limit=5
+        )
+
+        # Step 3: Format the context text for System Prompt
+        formatted_context = ""
+        for i, chunk in enumerate(retrieved_chunks):
+            doc_name = chunk.get("filename") or f"Document #{chunk.get('document_id')}"
+            sec = chunk.get("estimated_section", "General")
+            page = chunk.get("page_number", 1)
+            formatted_context += f"--- Source Chunk {i+1} ---\n"
+            formatted_context += f"Document: {doc_name}\n"
+            formatted_context += f"Section: {sec}\n"
+            formatted_context += f"Page: {page}\n"
+            formatted_context += f"Content: {chunk['text']}\n\n"
+
+        # Compute Confidence Level
+        if retrieved_chunks and len(retrieved_chunks) > 0:
+            top_score = retrieved_chunks[0].get("score", 0.0)
+            if top_score >= 0.70:
+                confidence_level = "High"
+            elif top_score >= 0.45:
+                confidence_level = "Medium"
+            else:
+                confidence_level = "Low"
+        else:
+            confidence_level = "Low"
+
+        # Yield Initial Metadata Packet to Client
+        meta_event = {
+            "type": "metadata",
+            "retrieved_context": retrieved_chunks,
+            "confidence_level": confidence_level
+        }
+        yield f"data: {json.dumps(meta_event)}\n\n"
+
+        # Construct legal RAG system prompt
+        context_block = f"Here is the retrieved legal context from the workspace:\n{formatted_context}\n" if formatted_context.strip() else "No direct matching document chunks found in workspace retrieval.\n"
+        
+        system_instruction = (
+            "You are a highly experienced and meticulous Legal AI Assistant specializing in statutory laws, contracts, and legal analysis.\n\n"
+            f"{context_block}"
+            "Instructions:\n"
+            "1. Primary Source & Citation: Ground your analysis in the provided Retrieved Context whenever available. "
+            "When referencing specific provisions from the context, explicitly cite the Document name, Section/Clause, and Page number if provided (e.g., 'According to Bharatiya Nyaya Sanhita, Section 4 (Page 12)...').\n"
+            "2. General Knowledge & Definitions: If the retrieved context is empty or incomplete for general legal definitions, statutory background (such as explaining abbreviations like BNS / Bharatiya Nyaya Sanhita, IPC, BNSS, BSA, etc.), or standard legal concepts, provide a clear, accurate, and professional legal overview using established legal knowledge. Clearly distinguish between workspace document citations and general legal background.\n"
+            "3. Precision & Anti-Hallucination: Do not fabricate specific clause numbers or invent non-existent file references when citing workspace documents.\n"
+            "4. Formatting: Be highly professional, concise, and structure your response with clear headers, bullet points, and bold key terms.\n"
+            "5. Legal Disclaimer: Keep in mind that all responses are provided for informational and legal research purposes."
+        )
+
+        # Save user message to Postgres
+        user_message = ChatMessage(
+            session_id=session_id,
+            role="user",
+            content=user_content
+        )
+        self.db.add(user_message)
+        await self.db.commit()
+
+        # Fetch history
+        history = await self.get_session_history(session_id, user_id)
+
+        # Stream assistant content from Gemini
+        accumulated_text = ""
+        async for chunk_text in self.gemini_client.generate_response_stream(
+            messages=history,
+            system_instruction=system_instruction
+        ):
+            accumulated_text += chunk_text
+            chunk_event = {
+                "type": "chunk",
+                "content": chunk_text
+            }
+            yield f"data: {json.dumps(chunk_event)}\n\n"
+
+        # Save assistant message to DB
+        assistant_message = ChatMessage(
+            session_id=session_id,
+            role="model",
+            content=accumulated_text,
+            confidence_level=confidence_level,
+            retrieved_context=retrieved_chunks
+        )
+        self.db.add(assistant_message)
+        await self.db.commit()
+        await self.db.refresh(assistant_message)
+
+        done_event = {
+            "type": "done",
+            "message_id": assistant_message.id
+        }
+        yield f"data: {json.dumps(done_event)}\n\n"
+

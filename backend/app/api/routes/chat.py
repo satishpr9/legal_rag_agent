@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from app.api.deps import SessionDep, CurrentUser
 from app.db.models import ChatSession, ChatMessage, RoleEnum
 from app.schemas.chat import ChatSessionCreate, ChatSessionResponse, ChatMessageCreate, ChatMessageResponse
@@ -87,3 +88,25 @@ async def send_message(
         user_content=msg_in.content
     )
     return response_msg
+
+@router.post("/sessions/{session_id}/messages/stream")
+async def send_message_stream(
+    session_id: int,
+    msg_in: ChatMessageCreate,
+    session: SessionDep,
+    current_user: CurrentUser
+):
+    """
+    Send a message and stream the RAG-grounded response tokens as Server-Sent Events (SSE).
+    """
+    check_not_admin(current_user)
+    chat_service = LegalChatService(session)
+    return StreamingResponse(
+        chat_service.process_message_stream(
+            session_id=session_id,
+            user_id=current_user.id,
+            user_content=msg_in.content
+        ),
+        media_type="text/event-stream"
+    )
+

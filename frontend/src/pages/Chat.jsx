@@ -149,31 +149,87 @@ export default function Chat() {
     setError('');
 
     const tempUserMsg = {
-      id: Date.now(),
+      id: 'user-' + Date.now(),
       session_id: activeSession.id,
       role: 'user',
       content: text,
       created_at: new Date().toISOString()
     };
-    setMessages(prev => [...prev, tempUserMsg]);
+
+    const tempAssistantMsgId = 'stream-' + Date.now();
+    const tempAssistantMsg = {
+      id: tempAssistantMsgId,
+      session_id: activeSession.id,
+      role: 'model',
+      content: '',
+      confidence_level: 'Medium',
+      retrieved_context: [],
+      isStreaming: true,
+      created_at: new Date().toISOString()
+    };
+
+    setMessages(prev => [...prev, tempUserMsg, tempAssistantMsg]);
 
     try {
       const headers = { 'Content-Type': 'application/json', ...getAuthHeaders() };
-      const res = await fetch(`http://localhost:8000/api/v1/chat/sessions/${activeSession.id}/messages`, {
+      const response = await fetch(`http://localhost:8000/api/v1/chat/sessions/${activeSession.id}/messages/stream`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ content: text })
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || 'AI Inference error. Verify backend server logs.');
       }
 
-      const data = await res.json();
-      setMessages(prev => [...prev, data]);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
+            const dataStr = trimmed.slice(6);
+            if (!dataStr) continue;
+            try {
+              const event = JSON.parse(dataStr);
+              if (event.type === 'metadata') {
+                setMessages(prev => prev.map(m => 
+                  m.id === tempAssistantMsgId 
+                    ? { ...m, retrieved_context: event.retrieved_context, confidence_level: event.confidence_level }
+                    : m
+                ));
+              } else if (event.type === 'chunk') {
+                setMessages(prev => prev.map(m => 
+                  m.id === tempAssistantMsgId 
+                    ? { ...m, content: m.content + event.content }
+                    : m
+                ));
+              } else if (event.type === 'done') {
+                setMessages(prev => prev.map(m => 
+                  m.id === tempAssistantMsgId 
+                    ? { ...m, id: event.message_id, isStreaming: false }
+                    : m
+                ));
+              }
+            } catch (e) {
+              // Ignore line parse errors
+            }
+          }
+        }
+      }
     } catch (err) {
       setError(err.message);
+      setMessages(prev => prev.filter(m => m.id !== tempAssistantMsgId));
     } finally {
       setSending(false);
     }
@@ -281,9 +337,9 @@ export default function Chat() {
         position: 'relative',
         background: '#f8fafc'
       }}>
-        {/* Workspace Top Bar */}
+        {/* Clean ChatGPT-Style Top Bar */}
         <header style={{
-          padding: '0.9rem 1.8rem',
+          padding: '0.85rem 1.8rem',
           borderBottom: '1px solid #e2e8f0',
           background: '#ffffff',
           display: 'flex',
@@ -304,17 +360,19 @@ export default function Chat() {
               <Scale size={18} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>{activeSession?.title || 'Legal Workspace'}</h2>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>Qdrant Vector Database Connected</span>
+              <h2 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                {activeSession?.title || 'Legal Consultation'}
+              </h2>
+              <span style={{ fontSize: '0.73rem', color: 'var(--text-subtle)' }}>
+                Grounded Legal Research Workspace
+              </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <span className="badge badge-gold">
-              <Sparkles size={11} /> Gemini 1.5 Flash
-            </span>
-            <span className="badge badge-blue">
-              <BookOpen size={11} /> RAG Synthesizer
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981' }}></span>
+              Ready
             </span>
           </div>
         </header>
@@ -399,9 +457,20 @@ export default function Chat() {
                       color: '#0f172a'
                     }}>
                       {msg.content}
+                      {msg.isStreaming && (
+                        <span style={{
+                          display: 'inline-block',
+                          width: '8px',
+                          height: '15px',
+                          background: 'var(--accent-primary)',
+                          marginLeft: '4px',
+                          verticalAlign: 'middle',
+                          borderRadius: '1px'
+                        }} />
+                      )}
                     </div>
 
-                    {!isUser && (
+                    {!isUser && !msg.isStreaming && (
                       <div style={{
                         marginTop: '0.85rem',
                         padding: '0.55rem 0.8rem',
@@ -519,62 +588,84 @@ export default function Chat() {
             </div>
           )}
 
-          {sending && (
-            <div className="animate-fade-in" style={{ alignSelf: 'flex-start', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>
-                LegalAI Synthesizer
-              </span>
-              <div className="glass-card" style={{ padding: '0.9rem 1.4rem', borderRadius: '16px 16px 16px 2px', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>Synthesizing vector search results & legal citations...</span>
-              </div>
-            </div>
-          )}
-
           <div ref={messagesEndRef} />
         </div>
 
-        {/* BOTTOM INPUT BAR */}
+        {/* CHATGPT-STYLE FLOATING INPUT CONTAINER */}
         <div style={{
-          padding: '1.2rem 1.8rem',
-          borderTop: '1px solid #e2e8f0',
-          background: '#ffffff'
+          padding: '1rem 1.5rem 1.2rem',
+          background: 'transparent',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center'
         }}>
-          <form
-            onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
-            style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}
-          >
-            <div style={{ position: 'relative', flex: 1 }}>
-              <input
-                className="input-field"
-                type="text"
-                placeholder="Ask about indexed contracts, case precedents, or statutory provisions..."
-                value={userInput}
-                onChange={(e) => setUserInput(e.target.value)}
-                disabled={sending}
-                style={{
-                  width: '100%',
-                  padding: '0.85rem 1.2rem',
-                  borderRadius: 'var(--radius-lg)',
-                  fontSize: '0.95rem'
-                }}
-              />
-            </div>
+          <div style={{
+            width: '100%',
+            maxWidth: '820px',
+            background: '#ffffff',
+            borderRadius: '24px',
+            border: '1px solid #cbd5e1',
+            boxShadow: '0 4px 16px rgba(15, 23, 42, 0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0.35rem 0.6rem 0.35rem 1.2rem',
+            transition: 'all 0.2s ease',
+            position: 'relative'
+          }}>
+            <textarea
+              rows={1}
+              placeholder="Ask a legal question, analyze contract provisions, or research statutory law..."
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              disabled={sending}
+              style={{
+                flex: 1,
+                border: 'none',
+                outline: 'none',
+                resize: 'none',
+                padding: '0.55rem 0',
+                fontSize: '0.94rem',
+                lineHeight: 1.45,
+                color: '#0f172a',
+                background: 'transparent',
+                fontFamily: 'inherit',
+                maxHeight: '120px'
+              }}
+            />
 
             <button
-              type="submit"
-              className="btn btn-primary"
+              type="button"
+              onClick={() => handleSendMessage()}
               disabled={sending || !userInput.trim()}
               style={{
-                height: '46px',
-                padding: '0 1.4rem',
-                borderRadius: 'var(--radius-lg)',
-                fontSize: '0.9rem'
+                width: '38px',
+                height: '38px',
+                borderRadius: '50%',
+                background: sending || !userInput.trim() ? '#e2e8f0' : 'var(--accent-primary)',
+                color: '#ffffff',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: sending || !userInput.trim() ? 'not-allowed' : 'pointer',
+                marginLeft: '0.5rem',
+                flexShrink: 0,
+                transition: 'all 0.2s ease'
               }}
             >
-              <span>Consult AI</span>
               <Send size={16} />
             </button>
-          </form>
+          </div>
+
+          <div style={{ fontSize: '0.71rem', color: 'var(--text-subtle)', marginTop: '0.45rem' }}>
+            Antigravity Legal AI provides research assistance. Verify statutory provisions against primary legal sources.
+          </div>
         </div>
       </main>
 
