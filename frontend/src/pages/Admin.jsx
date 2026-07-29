@@ -190,6 +190,7 @@ export default function Admin() {
       }
 
       setSuccess(`Document "${filename}" deleted successfully.`);
+      setDocuments(prev => prev.filter(doc => doc.id !== docId));
       await fetchDocuments();
     } catch (err) {
       setError(err.message);
