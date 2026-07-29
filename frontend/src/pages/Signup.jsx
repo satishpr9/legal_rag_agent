@@ -54,60 +54,62 @@ export default function Signup() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '2.5rem 1.5rem',
-      minHeight: 'calc(100vh - 65px)'
+      minHeight: 'calc(100vh - 65px)',
+      background: '#f8fafc'
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '1050px',
+        maxWidth: '1020px',
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-        gap: '2rem',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+        gap: '2.5rem',
         alignItems: 'center'
       }}>
-        {/* Left Side: Brand Feature Showcase */}
+        {/* Left Side: Brand Showcase */}
         <div style={{ padding: '1rem' }}>
-          <div className="badge badge-blue" style={{ marginBottom: '1.2rem' }}>
+          <div className="badge badge-gold" style={{ marginBottom: '1.2rem' }}>
             <Sparkles size={12} /> ENTERPRISE REGISTRATION
           </div>
           <h1 style={{
-            fontSize: '2.5rem',
-            lineHeight: 1.15,
+            fontSize: '2.4rem',
+            lineHeight: 1.2,
             fontWeight: 800,
-            marginBottom: '1rem'
+            marginBottom: '1rem',
+            color: '#0f172a'
           }}>
-            Join the Premier <span className="text-blue-gradient">AI Legal Network</span>
+            Join the Premier <span className="text-gold-gradient">AI Legal Platform</span>
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.6 }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.6 }}>
             Equip your legal practice with automated case law indexing, multi-document semantic search, and real-time citation analysis.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
               <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'rgba(226, 184, 87, 0.15)',
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: 'rgba(217, 119, 6, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'var(--accent-gold)'
               }}>
-                <Shield size={18} />
+                <Shield size={20} />
               </div>
               <div>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Custom Firm Workspace Isolation</h4>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-subtle)' }}>Vector stores segregated per workspace and user role</p>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>Custom Firm Workspace Isolation</h4>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Vector stores segregated per workspace and user role</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Side: Auth Glass Card */}
+        {/* Right Side: Auth White Card */}
         <div className="glass-card animate-fade-in" style={{ padding: '2.5rem' }}>
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '0.4rem' }}>Create Account</h2>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Get instant access to AI statutory analysis</p>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '0.4rem', color: '#0f172a' }}>Create Account</h2>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>Get instant access to AI statutory analysis</p>
           </div>
 
           {error && (
@@ -115,8 +117,8 @@ export default function Signup() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.6rem',
-              background: 'rgba(244, 63, 94, 0.12)',
-              border: '1px solid rgba(244, 63, 94, 0.3)',
+              background: 'rgba(220, 38, 38, 0.08)',
+              border: '1px solid rgba(220, 38, 38, 0.25)',
               padding: '0.8rem 1rem',
               borderRadius: 'var(--radius-md)',
               color: 'var(--accent-danger)',
@@ -133,8 +135,8 @@ export default function Signup() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.6rem',
-              background: 'rgba(16, 185, 129, 0.12)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
+              background: 'rgba(22, 163, 74, 0.08)',
+              border: '1px solid rgba(22, 163, 74, 0.25)',
               padding: '0.8rem 1rem',
               borderRadius: 'var(--radius-md)',
               color: 'var(--accent-success)',
@@ -215,9 +217,9 @@ export default function Signup() {
 
             <button
               type="submit"
-              className="btn btn-blue"
+              className="btn btn-primary"
               disabled={loading || success}
-              style={{ width: '100%', padding: '0.85rem', marginTop: '1rem', fontSize: '0.95rem' }}
+              style={{ width: '100%', padding: '0.85rem', marginTop: '1rem', fontSize: '0.92rem' }}
             >
               {loading ? 'Creating Account...' : (
                 <>
@@ -230,7 +232,7 @@ export default function Signup() {
 
           <div style={{ marginTop: '1.8rem', textAlign: 'center', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
             Already registered?{' '}
-            <Link to="/login" style={{ color: 'var(--accent-blue)', fontWeight: 600, textDecoration: 'none' }}>
+            <Link to="/login" style={{ color: 'var(--accent-primary)', fontWeight: 600, textDecoration: 'none' }}>
               Sign In Here
             </Link>
           </div>

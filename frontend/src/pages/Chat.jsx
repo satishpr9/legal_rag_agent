@@ -191,15 +191,15 @@ export default function Chat() {
       display: 'flex',
       flex: 1,
       height: 'calc(100vh - 65px)',
-      background: 'var(--bg-base)',
+      background: '#f8fafc',
       overflow: 'hidden'
     }}>
       
       {/* LEFT SIDEBAR: Sessions History */}
       <aside style={{
         width: '320px',
-        background: 'rgba(12, 18, 34, 0.7)',
-        borderRight: '1px solid var(--glass-border-subtle)',
+        background: '#ffffff',
+        borderRight: '1px solid #e2e8f0',
         display: 'flex',
         flexDirection: 'column',
         padding: '1.25rem'
@@ -207,7 +207,7 @@ export default function Chat() {
         {/* New Session Button */}
         <button
           onClick={() => handleCreateSession()}
-          className="btn btn-gold"
+          className="btn btn-primary"
           style={{ width: '100%', marginBottom: '1.2rem', padding: '0.75rem' }}
         >
           <Plus size={18} />
@@ -244,19 +244,19 @@ export default function Chat() {
                   borderRadius: 'var(--radius-md)',
                   cursor: 'pointer',
                   transition: 'var(--transition-fast)',
-                  background: isActive ? 'rgba(226, 184, 87, 0.12)' : 'transparent',
+                  background: isActive ? 'rgba(37, 99, 235, 0.08)' : 'transparent',
                   border: '1px solid',
-                  borderColor: isActive ? 'rgba(226, 184, 87, 0.3)' : 'transparent',
+                  borderColor: isActive ? 'rgba(37, 99, 235, 0.25)' : 'transparent',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.6rem'
                 }}
               >
-                <MessageSquare size={15} color={isActive ? 'var(--accent-gold)' : 'var(--text-subtle)'} />
+                <MessageSquare size={15} color={isActive ? 'var(--accent-primary)' : 'var(--text-subtle)'} />
                 <span style={{
                   fontSize: '0.85rem',
-                  fontWeight: isActive ? 600 : 400,
-                  color: isActive ? 'var(--accent-gold)' : 'var(--text-muted)',
+                  fontWeight: isActive ? 700 : 400,
+                  color: isActive ? 'var(--accent-primary)' : 'var(--text-muted)',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -276,13 +276,13 @@ export default function Chat() {
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        background: 'radial-gradient(circle at 50% 10%, rgba(226, 184, 87, 0.03) 0%, transparent 60%)'
+        background: '#f8fafc'
       }}>
         {/* Workspace Top Bar */}
         <header style={{
           padding: '0.9rem 1.8rem',
-          borderBottom: '1px solid var(--glass-border-subtle)',
-          background: 'rgba(6, 9, 18, 0.6)',
+          borderBottom: '1px solid #e2e8f0',
+          background: '#ffffff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
@@ -292,16 +292,16 @@ export default function Chat() {
               width: '32px',
               height: '32px',
               borderRadius: '8px',
-              background: 'rgba(226, 184, 87, 0.15)',
+              background: 'rgba(37, 99, 235, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--accent-gold)'
+              color: 'var(--accent-primary)'
             }}>
               <Scale size={18} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1rem', fontWeight: 700 }}>{activeSession?.title || 'Legal Workspace'}</h2>
+              <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>{activeSession?.title || 'Legal Workspace'}</h2>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>Qdrant Vector Database Connected</span>
             </div>
           </div>
@@ -330,8 +330,8 @@ export default function Chat() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.6rem',
-              background: 'rgba(244, 63, 94, 0.12)',
-              border: '1px solid rgba(244, 63, 94, 0.3)',
+              background: 'rgba(220, 38, 38, 0.08)',
+              border: '1px solid rgba(220, 38, 38, 0.25)',
               padding: '0.85rem 1.2rem',
               borderRadius: 'var(--radius-md)',
               color: 'var(--accent-danger)',
@@ -363,7 +363,7 @@ export default function Chat() {
                       fontWeight: 700,
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em',
-                      color: isUser ? 'var(--accent-gold)' : 'var(--accent-blue)'
+                      color: isUser ? 'var(--accent-primary)' : 'var(--accent-gold)'
                     }}>
                       {isUser ? (profile?.full_name || 'Counsel') : 'LegalAI Assistant'}
                     </span>
@@ -371,16 +371,16 @@ export default function Chat() {
 
                   <div className="glass-card" style={{
                     padding: '1.2rem 1.4rem',
-                    background: isUser ? 'rgba(226, 184, 87, 0.08)' : 'rgba(20, 29, 51, 0.7)',
-                    borderColor: isUser ? 'rgba(226, 184, 87, 0.25)' : 'var(--glass-border-subtle)',
-                    borderRadius: isUser ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
+                    background: isUser ? '#eff6ff' : '#ffffff',
+                    borderColor: isUser ? '#bfdbfe' : '#e2e8f0',
+                    borderRadius: isUser ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
                     position: 'relative'
                   }}>
                     <div style={{
                       fontSize: '0.95rem',
                       lineHeight: 1.65,
                       whiteSpace: 'pre-wrap',
-                      color: 'var(--text-main)'
+                      color: '#0f172a'
                     }}>
                       {msg.content}
                     </div>
@@ -389,7 +389,7 @@ export default function Chat() {
                     <div style={{
                       marginTop: '0.8rem',
                       paddingTop: '0.6rem',
-                      borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                      borderTop: '1px solid #f1f5f9',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between'
@@ -410,7 +410,7 @@ export default function Chat() {
                             setIsRefPanelOpen(true);
                           }}
                           className="badge badge-gold"
-                          style={{ cursor: 'pointer', border: '1px solid rgba(226, 184, 87, 0.4)' }}
+                          style={{ cursor: 'pointer' }}
                         >
                           <FileText size={12} />
                           <span>{msg.retrieved_context.length} Verified Sources</span>
@@ -434,23 +434,22 @@ export default function Chat() {
               padding: '2rem'
             }}>
               <div style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '16px',
-                background: 'rgba(226, 184, 87, 0.12)',
-                border: '1px solid var(--accent-gold)',
+                width: '60px',
+                height: '60px',
+                borderRadius: '14px',
+                background: 'rgba(37, 99, 235, 0.08)',
+                border: '1px solid var(--accent-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: '1.2rem',
-                boxShadow: 'var(--shadow-glow-gold)'
+                marginBottom: '1.2rem'
               }}>
-                <Scale size={32} color="var(--accent-gold)" />
+                <Scale size={30} color="var(--accent-primary)" />
               </div>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', color: '#0f172a' }}>
                 Legal AI Consultation Hub
               </h3>
-              <p style={{ color: 'var(--text-muted)', maxWidth: '520px', fontSize: '0.95rem', marginBottom: '2rem' }}>
+              <p style={{ color: 'var(--text-muted)', maxWidth: '520px', fontSize: '0.92rem', marginBottom: '2rem' }}>
                 Ask complex statutory questions, review contracts for liability risks, or extract statutory citations grounded in indexed document repositories.
               </p>
 
@@ -473,11 +472,11 @@ export default function Chat() {
                       borderRadius: 'var(--radius-md)'
                     }}
                   >
-                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--accent-primary)', marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                       <Sparkles size={14} />
                       {prompt.title}
                     </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-subtle)', lineHeight: 1.4 }}>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
                       "{prompt.query}"
                     </p>
                   </div>
@@ -488,15 +487,10 @@ export default function Chat() {
 
           {sending && (
             <div className="animate-fade-in" style={{ alignSelf: 'flex-start', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-blue)', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>
                 LegalAI Synthesizer
               </span>
-              <div className="glass-card" style={{ padding: '0.9rem 1.4rem', borderRadius: '18px 18px 18px 2px', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', gap: '0.3rem' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-gold)', animation: 'pulseGlow 1s infinite ease-in-out' }} />
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-blue)', animation: 'pulseGlow 1s infinite ease-in-out 0.2s' }} />
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-purple)', animation: 'pulseGlow 1s infinite ease-in-out 0.4s' }} />
-                </div>
+              <div className="glass-card" style={{ padding: '0.9rem 1.4rem', borderRadius: '16px 16px 16px 2px', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>Synthesizing vector search results & legal citations...</span>
               </div>
             </div>
@@ -508,8 +502,8 @@ export default function Chat() {
         {/* BOTTOM INPUT BAR */}
         <div style={{
           padding: '1.2rem 1.8rem',
-          borderTop: '1px solid var(--glass-border-subtle)',
-          background: 'rgba(6, 9, 18, 0.8)'
+          borderTop: '1px solid #e2e8f0',
+          background: '#ffffff'
         }}>
           <form
             onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
@@ -525,7 +519,7 @@ export default function Chat() {
                 disabled={sending}
                 style={{
                   width: '100%',
-                  padding: '0.9rem 1.2rem',
+                  padding: '0.85rem 1.2rem',
                   borderRadius: 'var(--radius-lg)',
                   fontSize: '0.95rem'
                 }}
@@ -534,10 +528,10 @@ export default function Chat() {
 
             <button
               type="submit"
-              className="btn btn-gold"
+              className="btn btn-primary"
               disabled={sending || !userInput.trim()}
               style={{
-                height: '48px',
+                height: '46px',
                 padding: '0 1.4rem',
                 borderRadius: 'var(--radius-lg)',
                 fontSize: '0.9rem'
@@ -561,13 +555,14 @@ export default function Chat() {
           padding: '1.4rem',
           display: 'flex',
           flexDirection: 'column',
-          background: 'rgba(12, 18, 34, 0.95)',
-          zIndex: 50
+          background: '#ffffff',
+          zIndex: 50,
+          borderLeft: '1px solid #e2e8f0'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem', paddingBottom: '0.8rem', borderBottom: '1px solid var(--glass-border-subtle)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem', paddingBottom: '0.8rem', borderBottom: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <FileText size={18} color="var(--accent-gold)" />
-              <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Citation Inspector</h3>
+              <FileText size={18} color="var(--accent-primary)" />
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Citation Inspector</h3>
             </div>
             <button
               onClick={() => setIsRefPanelOpen(false)}
@@ -582,7 +577,7 @@ export default function Chat() {
               <div
                 key={idx}
                 className="glass-card"
-                style={{ padding: '1rem', background: 'rgba(20, 29, 51, 0.5)' }}
+                style={{ padding: '1rem', background: '#f8fafc', borderColor: '#e2e8f0' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                   <span className="badge badge-gold" style={{ fontSize: '0.7rem' }}>
@@ -596,13 +591,15 @@ export default function Chat() {
                 <p style={{
                   fontSize: '0.82rem',
                   lineHeight: 1.5,
-                  color: 'var(--text-main)',
+                  color: '#0f172a',
                   fontStyle: 'italic',
-                  background: 'rgba(6, 9, 18, 0.6)',
+                  background: '#ffffff',
                   padding: '0.75rem',
                   borderRadius: 'var(--radius-sm)',
-                  borderLeft: '3px solid var(--accent-gold)',
-                  marginBottom: '0.6rem'
+                  borderLeft: '3px solid var(--accent-primary)',
+                  marginBottom: '0.6rem',
+                  border: '1px solid #e2e8f0',
+                  borderLeftWidth: '3px'
                 }}>
                   "{ref.text}"
                 </p>

@@ -37,6 +37,9 @@ export default function Login() {
       localStorage.setItem('token', data.access_token);
       window.dispatchEvent(new Event('auth-change'));
       
+      const profileRes = await fetch('http://localhost:8000/api/v1/auth/me', {
+        headers: { 'Authorization': `Bearer ${data.access_token}` }
+      });
       if (profileRes.ok) {
         const profileData = await profileRes.json();
         if (profileData.role === 'admin') {
@@ -61,79 +64,81 @@ export default function Login() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '2.5rem 1.5rem',
-      minHeight: 'calc(100vh - 65px)'
+      minHeight: 'calc(100vh - 65px)',
+      background: '#f8fafc'
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '1050px',
+        maxWidth: '1020px',
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-        gap: '2rem',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+        gap: '2.5rem',
         alignItems: 'center'
       }}>
         {/* Left Side: Brand Feature Showcase */}
         <div style={{ padding: '1rem' }}>
-          <div className="badge badge-gold" style={{ marginBottom: '1.2rem' }}>
-            <Sparkles size={12} /> ENTERPRISE LEGAL INTELLIGENCE
+          <div className="badge badge-blue" style={{ marginBottom: '1.2rem' }}>
+            <Sparkles size={12} /> LEGAL RAG INTELLIGENCE ENGINE
           </div>
           <h1 style={{
-            fontSize: '2.5rem',
-            lineHeight: 1.15,
+            fontSize: '2.4rem',
+            lineHeight: 1.2,
             fontWeight: 800,
-            marginBottom: '1rem'
+            marginBottom: '1rem',
+            color: '#0f172a'
           }}>
-            Accelerate Legal Research with <span className="text-gold-gradient">AI Precision</span>
+            Accelerate Legal Research with <span className="text-blue-gradient">AI Precision</span>
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.6 }}>
-            Access instant statutory analysis, case precedent retrieval, and automated document synthesis powered by state-of-the-art vector embedding technology.
+          <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: '2rem', lineHeight: 1.6 }}>
+            Access instant statutory analysis, case precedent retrieval, and automated document synthesis grounded in vector embedding technology.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
               <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'rgba(226, 184, 87, 0.15)',
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: 'rgba(37, 99, 235, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--accent-primary)'
+              }}>
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>SOC2 Type II & Encrypted Workspaces</h4>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Your client files remain strict private workspace property</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: 'rgba(217, 119, 6, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'var(--accent-gold)'
               }}>
-                <ShieldCheck size={18} />
+                <Scale size={20} />
               </div>
               <div>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 600 }}>SOC2 Type II & End-to-End Encryption</h4>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-subtle)' }}>Your client files remain strict private workspace property</p>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'rgba(56, 189, 248, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--accent-blue)'
-              }}>
-                <Scale size={18} />
-              </div>
-              <div>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Zero-Hallucination Citation Verification</h4>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-subtle)' }}>Every answer links directly to verified source document chunks</p>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>Zero-Hallucination Citation Verification</h4>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Every answer links directly to verified source document chunks</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Side: Auth Glass Card */}
+        {/* Right Side: Auth White Card */}
         <div className="glass-card animate-fade-in" style={{ padding: '2.5rem' }}>
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '0.4rem' }}>Welcome Back</h2>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Sign in to access your firm's AI legal workspace</p>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '0.4rem', color: '#0f172a' }}>Welcome Back</h2>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>Sign in to access your AI legal workspace</p>
           </div>
 
           {error && (
@@ -141,8 +146,8 @@ export default function Login() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.6rem',
-              background: 'rgba(244, 63, 94, 0.12)',
-              border: '1px solid rgba(244, 63, 94, 0.3)',
+              background: 'rgba(220, 38, 38, 0.08)',
+              border: '1px solid rgba(220, 38, 38, 0.25)',
               padding: '0.8rem 1rem',
               borderRadius: 'var(--radius-md)',
               color: 'var(--accent-danger)',
@@ -198,9 +203,9 @@ export default function Login() {
 
             <button
               type="submit"
-              className="btn btn-gold"
+              className="btn btn-primary"
               disabled={loading}
-              style={{ width: '100%', padding: '0.85rem', marginTop: '1rem', fontSize: '0.95rem' }}
+              style={{ width: '100%', padding: '0.85rem', marginTop: '1rem', fontSize: '0.92rem' }}
             >
               {loading ? 'Authenticating...' : (
                 <>
@@ -213,8 +218,8 @@ export default function Login() {
 
           <div style={{ marginTop: '1.8rem', textAlign: 'center', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
             Don't have an account?{' '}
-            <Link to="/signup" style={{ color: 'var(--accent-gold)', fontWeight: 600, textDecoration: 'none' }}>
-              Register Firm Account
+            <Link to="/signup" style={{ color: 'var(--accent-primary)', fontWeight: 600, textDecoration: 'none' }}>
+              Register Account
             </Link>
           </div>
         </div>

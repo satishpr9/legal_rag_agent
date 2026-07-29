@@ -54,11 +54,10 @@ export default function Navbar() {
       position: 'sticky',
       top: 0,
       zIndex: 100,
-      background: 'rgba(6, 9, 18, 0.85)',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
-      borderBottom: '1px solid rgba(226, 184, 87, 0.12)',
-      padding: '0.75rem 1.5rem'
+      background: '#ffffff',
+      borderBottom: '1px solid #e2e8f0',
+      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.04)',
+      padding: '0.75rem 1.8rem'
     }}>
       <div style={{
         maxWidth: '1400px',
@@ -78,13 +77,13 @@ export default function Navbar() {
             width: '38px',
             height: '38px',
             borderRadius: '10px',
-            background: 'linear-gradient(135deg, #e2b857 0%, #b8860b 100%)',
+            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 0 15px rgba(226, 184, 87, 0.3)'
+            boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)'
           }}>
-            <Scale size={22} color="#060912" strokeWidth={2.5} />
+            <Scale size={22} color="#ffffff" strokeWidth={2.2} />
           </div>
           <div>
             <div style={{
@@ -96,12 +95,12 @@ export default function Navbar() {
               alignItems: 'center',
               gap: '0.35rem'
             }}>
-              <span className="text-gold-gradient">LegalAI</span>
-              <span style={{ color: 'var(--text-main)' }}>Pro</span>
-              <Sparkles size={14} color="#e2b857" style={{ opacity: 0.8 }} />
+              <span style={{ color: '#0f172a' }}>LegalAI</span>
+              <span style={{ color: 'var(--accent-primary)' }}>Pro</span>
+              <Sparkles size={14} color="#d97706" />
             </div>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-subtle)', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginTop: '-3px' }}>
-              Intelligence Engine
+            <span style={{ fontSize: '0.65rem', color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginTop: '-3px' }}>
+              Intelligence Platform
             </span>
           </div>
         </Link>
@@ -117,7 +116,7 @@ export default function Navbar() {
               {user?.role !== 'admin' && (
                 <Link
                   to="/chat"
-                  className={`btn ${isActive('/chat') || isActive('/') ? 'btn-gold' : 'btn-ghost'}`}
+                  className={`btn ${isActive('/chat') || isActive('/') ? 'btn-primary' : 'btn-ghost'}`}
                   style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
                 >
                   <MessageSquare size={16} />
@@ -128,11 +127,11 @@ export default function Navbar() {
               {user?.role === 'admin' && (
                 <Link
                   to="/admin"
-                  className={`btn ${isActive('/admin') ? 'btn-gold' : 'btn-ghost'}`}
+                  className={`btn ${isActive('/admin') ? 'btn-primary' : 'btn-ghost'}`}
                   style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
                 >
                   <ShieldCheck size={16} />
-                  <span>Admin Console</span>
+                  <span>Admin Panel & Dashboard</span>
                 </Link>
               )}
             </>
@@ -147,8 +146,8 @@ export default function Navbar() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.6rem',
-                background: 'rgba(20, 29, 51, 0.6)',
-                border: '1px solid var(--glass-border-subtle)',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
                 padding: '0.35rem 0.85rem',
                 borderRadius: '9999px'
               }}>
@@ -156,23 +155,27 @@ export default function Navbar() {
                   width: '26px',
                   height: '26px',
                   borderRadius: '50%',
-                  background: 'rgba(226, 184, 87, 0.2)',
-                  border: '1px solid var(--accent-gold)',
+                  background: 'rgba(37, 99, 235, 0.1)',
+                  border: '1px solid var(--accent-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '0.75rem',
                   fontWeight: 700,
-                  color: 'var(--accent-gold)'
+                  color: 'var(--accent-primary)'
                 }}>
                   {user?.full_name ? user.full_name.charAt(0).toUpperCase() : <User size={14} />}
                 </div>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0f172a' }}>
                   {user?.full_name || user?.email || 'User'}
                 </span>
-                {user?.role === 'admin' && (
+                {user?.role === 'admin' ? (
                   <span className="badge badge-gold" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>
                     ADMIN
+                  </span>
+                ) : (
+                  <span className="badge badge-blue" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>
+                    {user?.role || 'USER'}
                   </span>
                 )}
               </div>
@@ -183,7 +186,7 @@ export default function Navbar() {
                 title="Sign Out"
                 style={{ padding: '0.5rem', borderRadius: '50%' }}
               >
-                <LogOut size={18} color="var(--accent-danger)" />
+                <LogOut size={17} color="var(--accent-danger)" />
               </button>
             </div>
           ) : (
@@ -191,7 +194,7 @@ export default function Navbar() {
               <Link to="/login" className="btn btn-ghost" style={{ fontSize: '0.85rem' }}>
                 Sign In
               </Link>
-              <Link to="/signup" className="btn btn-gold" style={{ fontSize: '0.85rem' }}>
+              <Link to="/signup" className="btn btn-primary" style={{ fontSize: '0.85rem' }}>
                 Get Started
               </Link>
             </div>
