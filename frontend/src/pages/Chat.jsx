@@ -238,6 +238,11 @@ export default function Chat() {
                 try {
                   const event = JSON.parse(dataStr);
                   if (event.type === 'metadata') {
+                    if (event.title) {
+                      const newTitle = event.title;
+                      setActiveSession(prev => prev ? { ...prev, title: newTitle } : prev);
+                      setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, title: newTitle } : s));
+                    }
                     setMessages(prev => prev.map(m => 
                       m.id === tempAssistantMsgId 
                         ? { ...m, retrieved_context: event.retrieved_context, confidence_level: event.confidence_level }

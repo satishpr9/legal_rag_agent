@@ -51,6 +51,14 @@ class LegalChatService:
         if not chat_session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
+        # Auto-title session from user's first prompt if title is default
+        if chat_session.title in ["New Chat", "New Consultation"]:
+            first_line = user_content.strip().split('\n')[0][:40]
+            if first_line:
+                chat_session.title = first_line
+                await self.db.commit()
+                await self.db.refresh(chat_session)
+
         # Step 2: Retrieve relevant legal context from Qdrant
         retrieved_chunks = await self.retrieval_service.retrieve_context(
             query=user_content,
@@ -148,6 +156,14 @@ class LegalChatService:
         if not chat_session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
+        # Auto-title session from user's first prompt if title is default
+        if chat_session.title in ["New Chat", "New Consultation"]:
+            first_line = user_content.strip().split('\n')[0][:40]
+            if first_line:
+                chat_session.title = first_line
+                await self.db.commit()
+                await self.db.refresh(chat_session)
+
         # Step 2: Retrieve relevant legal context from Qdrant
         retrieved_chunks = await self.retrieval_service.retrieve_context(
             query=user_content,
@@ -182,7 +198,8 @@ class LegalChatService:
         meta_event = {
             "type": "metadata",
             "retrieved_context": retrieved_chunks,
-            "confidence_level": confidence_level
+            "confidence_level": confidence_level,
+            "title": chat_session.title
         }
         yield f"data: {json.dumps(meta_event)}\n\n"
 
