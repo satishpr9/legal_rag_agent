@@ -99,7 +99,7 @@ async def test_legal_chat_streaming_loop(async_client: AsyncClient, user_token, 
     headers = {"Authorization": f"Bearer {user_token}"}
     session_res = await async_client.post(
         "/api/v1/chat/sessions",
-        json={"title": "Streaming Consultation"},
+        json={"title": "Legal Stream Session"},
         headers=headers
     )
     assert session_res.status_code == 200

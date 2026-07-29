@@ -88,7 +88,7 @@ export default function Chat() {
       if (data.length > 0) {
         setActiveSession(data[0]);
       } else {
-        await handleCreateSession("New Consultation");
+        await handleCreateSession("New Chat");
       }
     } catch (err) {
       setError(err.message);
@@ -116,7 +116,7 @@ export default function Chat() {
     }
   }, [activeSession]);
 
-  const handleCreateSession = async (titleText = "New Consultation") => {
+  const handleCreateSession = async (titleText = "New Chat") => {
     try {
       const headers = { 'Content-Type': 'application/json', ...getAuthHeaders() };
       const res = await fetch('http://localhost:8000/api/v1/chat/sessions', {
@@ -361,11 +361,8 @@ export default function Chat() {
             </div>
             <div>
               <h2 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                {activeSession?.title || 'Legal Consultation'}
+                {activeSession?.title || 'Legal Chat'}
               </h2>
-              <span style={{ fontSize: '0.73rem', color: 'var(--text-subtle)' }}>
-                Grounded Legal Research Workspace
-              </span>
             </div>
           </div>
 
