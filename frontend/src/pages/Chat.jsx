@@ -26,6 +26,7 @@ export default function Chat() {
   const [profile, setProfile] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [sessionSearch, setSessionSearch] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
@@ -322,33 +323,55 @@ export default function Chat() {
         height: '100%',
         overflow: 'hidden'
       }}>
-        {/* Brand Logo Header */}
+        {/* Brand Logo & Search Header */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '0.65rem',
+          justifyContent: 'space-between',
           marginBottom: '1.2rem',
           paddingBottom: '0.8rem',
           borderBottom: '1px solid #f1f5f9'
         }}>
-          <div style={{
-            width: '34px',
-            height: '34px',
-            borderRadius: '9px',
-            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 6px rgba(37, 99, 235, 0.2)'
-          }}>
-            <Scale size={19} color="#ffffff" strokeWidth={2.2} />
-          </div>
-          <div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <span>LegalAI</span>
-              <span style={{ color: 'var(--accent-primary)' }}>Pro</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <div style={{
+              width: '34px',
+              height: '34px',
+              borderRadius: '9px',
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 6px rgba(37, 99, 235, 0.2)'
+            }}>
+              <Scale size={19} color="#ffffff" strokeWidth={2.2} />
+            </div>
+            <div>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <span>LegalAI</span>
+                <span style={{ color: 'var(--accent-primary)' }}>Pro</span>
+              </div>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(prev => !prev)}
+            className="btn btn-ghost btn-sm"
+            title="Search Consultations"
+            style={{
+              padding: '0.45rem',
+              borderRadius: '8px',
+              background: isSearchOpen || sessionSearch ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+              color: isSearchOpen || sessionSearch ? 'var(--accent-primary)' : 'var(--text-subtle)',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Search size={17} />
+          </button>
         </div>
 
         {/* New Session Button */}
@@ -361,18 +384,21 @@ export default function Chat() {
           <span>New Chat</span>
         </button>
 
-        {/* Search Session Filter */}
-        <div style={{ position: 'relative', marginBottom: '1rem' }}>
-          <input
-            className="input-field"
-            type="text"
-            placeholder="Search consultations..."
-            value={sessionSearch}
-            onChange={(e) => setSessionSearch(e.target.value)}
-            style={{ width: '100%', paddingLeft: '2.3rem', fontSize: '0.82rem', padding: '0.55rem 0.8rem 0.55rem 2.3rem' }}
-          />
-          <Search size={14} color="var(--text-subtle)" style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)' }} />
-        </div>
+        {/* Search Session Filter (Toggleable) */}
+        {(isSearchOpen || sessionSearch) && (
+          <div style={{ position: 'relative', marginBottom: '1rem' }} className="animate-fade-in">
+            <input
+              autoFocus
+              className="input-field"
+              type="text"
+              placeholder="Search consultations..."
+              value={sessionSearch}
+              onChange={(e) => setSessionSearch(e.target.value)}
+              style={{ width: '100%', paddingLeft: '2.3rem', fontSize: '0.82rem', padding: '0.55rem 0.8rem 0.55rem 2.3rem' }}
+            />
+            <Search size={14} color="var(--text-subtle)" style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)' }} />
+          </div>
+        )}
 
         <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>
           Consultation History
