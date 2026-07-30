@@ -95,8 +95,6 @@ export default function Chat() {
       setSessions(data);
       if (data.length > 0) {
         setActiveSession(data[0]);
-      } else {
-        await handleCreateSession("New Chat");
       }
     } catch (err) {
       setError(err.message);
@@ -121,6 +119,8 @@ export default function Chat() {
       fetchMessages(activeSession.id);
       setIsRefPanelOpen(false);
       setActiveReferences(null);
+    } else {
+      setMessages([]);
     }
   }, [activeSession]);
 
@@ -136,8 +136,10 @@ export default function Chat() {
       const data = await res.json();
       setSessions(prev => [data, ...prev]);
       setActiveSession(data);
+      return data;
     } catch (err) {
       setError('Failed to start a new chat session.');
+      return null;
     }
   };
 
@@ -159,13 +161,29 @@ export default function Chat() {
           } else {
             setActiveSession(null);
             setMessages([]);
-            handleCreateSession("New Chat");
           }
         }
         return updated;
       });
     } catch (err) {
       setError(err.message || 'Failed to delete chat session');
+    }
+  };
+
+  const handleClearAllSessions = async () => {
+    if (!window.confirm("Are you sure you want to delete all chat history?")) return;
+    try {
+      const headers = getAuthHeaders();
+      const res = await fetch('http://localhost:8000/api/v1/chat/sessions', {
+        method: 'DELETE',
+        headers
+      });
+      if (!res.ok) throw new Error('Failed to clear chat history');
+      setSessions([]);
+      setActiveSession(null);
+      setMessages([]);
+    } catch (err) {
+      setError(err.message || 'Failed to clear chat history');
     }
   };
 
@@ -178,7 +196,11 @@ export default function Chat() {
       return;
     }
 
-    if (!activeSession) return;
+    let targetSession = activeSession;
+    if (!targetSession) {
+      targetSession = await handleCreateSession(text.trim().split('\n')[0].slice(0, 40) || "New Chat");
+      if (!targetSession) return;
+    }
 
     setUserInput('');
     setSending(true);
@@ -186,7 +208,7 @@ export default function Chat() {
 
     const tempUserMsg = {
       id: 'user-' + Date.now(),
-      session_id: activeSession.id,
+      session_id: targetSession.id,
       role: 'user',
       content: text,
       created_at: new Date().toISOString()
@@ -195,7 +217,7 @@ export default function Chat() {
     const tempAssistantMsgId = 'stream-' + Date.now();
     const tempAssistantMsg = {
       id: tempAssistantMsgId,
-      session_id: activeSession.id,
+      session_id: targetSession.id,
       role: 'model',
       content: '',
       confidence_level: 'Medium',
@@ -211,7 +233,7 @@ export default function Chat() {
       
       let isStreamSuccessful = false;
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/chat/sessions/${activeSession.id}/messages/stream`, {
+        const response = await fetch(`http://localhost:8000/api/v1/chat/sessions/${targetSession.id}/messages/stream`, {
           method: 'POST',
           headers,
           body: JSON.stringify({ content: text })
@@ -275,7 +297,7 @@ export default function Chat() {
 
       // If streaming was not successful or failed, fallback to standard POST
       if (!isStreamSuccessful) {
-        const fallbackRes = await fetch(`http://localhost:8000/api/v1/chat/sessions/${activeSession.id}/messages`, {
+        const fallbackRes = await fetch(`http://localhost:8000/api/v1/chat/sessions/${targetSession.id}/messages`, {
           method: 'POST',
           headers,
           body: JSON.stringify({ content: text })
@@ -405,8 +427,32 @@ export default function Chat() {
           </div>
         )}
 
-        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>
-          Consultation History
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Consultation History
+          </div>
+          {sessions.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearAllSessions}
+              title="Clear all chat history"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--accent-danger)',
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: '0.1rem 0.3rem',
+                borderRadius: '4px',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+              onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+            >
+              Clear All
+            </button>
+          )}
         </div>
 
         {/* Session Items List */}

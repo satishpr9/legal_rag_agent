@@ -161,8 +161,18 @@ class LegalChatService:
             first_line = user_content.strip().split('\n')[0][:40]
             if first_line:
                 chat_session.title = first_line
-                await self.db.commit()
-                await self.db.refresh(chat_session)
+
+        # Save user message to Postgres & commit session title
+        user_message = ChatMessage(
+            session_id=session_id,
+            role="user",
+            content=user_content
+        )
+        self.db.add(user_message)
+        await self.db.commit()
+
+        # Fetch history
+        history = await self.get_session_history(session_id, user_id)
 
         # Step 2: Retrieve relevant legal context from Qdrant
         retrieved_chunks = await self.retrieval_service.retrieve_context(
@@ -217,18 +227,6 @@ class LegalChatService:
             "4. Formatting: Be highly professional, concise, and structure your response with clear headers, bullet points, and bold key terms.\n"
             "5. Legal Disclaimer: Keep in mind that all responses are provided for informational and legal research purposes."
         )
-
-        # Save user message to Postgres
-        user_message = ChatMessage(
-            session_id=session_id,
-            role="user",
-            content=user_content
-        )
-        self.db.add(user_message)
-        await self.db.commit()
-
-        # Fetch history
-        history = await self.get_session_history(session_id, user_id)
 
         # Stream assistant content from Gemini
         accumulated_text = ""

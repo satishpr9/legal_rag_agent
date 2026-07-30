@@ -131,3 +131,22 @@ async def delete_chat_session(
     await session.commit()
     return {"message": "Session deleted successfully", "id": session_id}
 
+@router.delete("/sessions")
+async def delete_all_chat_sessions(
+    session: SessionDep,
+    current_user: CurrentUser
+):
+    """
+    Delete all chat sessions and history for the current user.
+    """
+    check_not_admin(current_user)
+    result = await session.execute(
+        select(ChatSession).where(ChatSession.user_id == current_user.id)
+    )
+    user_sessions = result.scalars().all()
+    for s in user_sessions:
+        await session.delete(s)
+    await session.commit()
+    return {"message": "All chat sessions deleted successfully"}
+
+
