@@ -122,7 +122,9 @@ export default function Chat() {
 
   useEffect(() => {
     if (activeSession) {
-      fetchMessages(activeSession.id);
+      if (!sending) {
+        fetchMessages(activeSession.id);
+      }
       setIsRefPanelOpen(false);
       setActiveReferences(null);
     } else {
