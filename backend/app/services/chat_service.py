@@ -59,10 +59,20 @@ class LegalChatService:
                 await self.db.commit()
                 await self.db.refresh(chat_session)
 
-        # Step 2: Retrieve relevant legal context from Qdrant
-        retrieved_chunks = await self.retrieval_service.retrieve_context(
-            query=user_content,
-            limit=5
+        # Save user message to Postgres
+        user_message = ChatMessage(
+            session_id=session_id,
+            role="user",
+            content=user_content
+        )
+        self.db.add(user_message)
+        await self.db.commit()
+
+        # Step 2: Retrieve relevant legal context & historical messages concurrently
+        import asyncio
+        retrieved_chunks, history = await asyncio.gather(
+            self.retrieval_service.retrieve_context(query=user_content, limit=4),
+            self.get_session_history(session_id, user_id)
         )
 
         # Step 3: Format the context text for the System Prompt (with Document Name, Section, and Page Number)
@@ -104,19 +114,7 @@ class LegalChatService:
             "5. Legal Disclaimer: Keep in mind that all responses are provided for informational and legal research purposes."
         )
 
-        # Step 5: Save the user's message to Postgres
-        user_message = ChatMessage(
-            session_id=session_id,
-            role="user",
-            content=user_content
-        )
-        self.db.add(user_message)
-        await self.db.commit()
-
-        # Step 6: Fetch historical messages
-        history = await self.get_session_history(session_id, user_id)
-
-        # Step 7: Call Gemini with the history and system prompt
+        # Step 7: Call LLM with the history and system prompt
         assistant_content = await self.gemini_client.generate_response(
             messages=history,
             system_instruction=system_instruction
@@ -171,13 +169,11 @@ class LegalChatService:
         self.db.add(user_message)
         await self.db.commit()
 
-        # Fetch history
-        history = await self.get_session_history(session_id, user_id)
-
-        # Step 2: Retrieve relevant legal context from Qdrant
-        retrieved_chunks = await self.retrieval_service.retrieve_context(
-            query=user_content,
-            limit=5
+        # Fetch history & retrieve legal context concurrently to minimize latency
+        import asyncio
+        history, retrieved_chunks = await asyncio.gather(
+            self.get_session_history(session_id, user_id),
+            self.retrieval_service.retrieve_context(query=user_content, limit=4)
         )
 
         # Step 3: Format the context text for System Prompt

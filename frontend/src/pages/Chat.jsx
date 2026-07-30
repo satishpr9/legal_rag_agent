@@ -338,6 +338,12 @@ export default function Chat() {
       background: '#f8fafc',
       overflow: 'hidden'
     }}>
+      <style>{`
+        @keyframes blinkCaret {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.15; }
+        }
+      `}</style>
       
       {/* LEFT SIDEBAR: Sessions History */}
       <aside style={{
@@ -780,11 +786,13 @@ export default function Chat() {
                         <span style={{
                           display: 'inline-block',
                           width: '8px',
-                          height: '15px',
-                          background: 'var(--accent-primary)',
+                          height: '16px',
+                          backgroundColor: 'var(--accent-primary)',
                           marginLeft: '4px',
                           verticalAlign: 'middle',
-                          borderRadius: '1px'
+                          borderRadius: '2px',
+                          boxShadow: '0 0 6px rgba(37, 99, 235, 0.6)',
+                          animation: 'blinkCaret 0.8s infinite'
                         }} />
                       )}
                     </div>

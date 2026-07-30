@@ -6,7 +6,10 @@ class GeminiEmbeddingClient:
     def __init__(self):
         # We load the lightweight, fast open-source model locally
         self.model_name = "all-MiniLM-L6-v2"
-        self.model = SentenceTransformer(self.model_name)
+        try:
+            self.model = SentenceTransformer(self.model_name, local_files_only=True)
+        except Exception:
+            self.model = SentenceTransformer(self.model_name)
         
     async def get_embedding(self, text: str) -> List[float]:
         """
