@@ -43,16 +43,19 @@ class LegalChatService:
         4. Calls Gemini.
         5. Saves both user and assistant messages to database.
         """
-        # Step 1: Verify session ownership
+        # Step 1: Verify session ownership (or auto-create if missing/stale session ID passed)
         session_result = await self.db.execute(
             select(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == user_id)
         )
         chat_session = session_result.scalar_one_or_none()
         if not chat_session:
-            raise HTTPException(status_code=404, detail="Chat session not found")
-
-        # Auto-title session from user's first prompt if title is default
-        if chat_session.title in ["New Chat", "New Consultation"]:
+            title_text = user_content.strip().split('\n')[0][:40] or "New Chat"
+            chat_session = ChatSession(user_id=user_id, title=title_text)
+            self.db.add(chat_session)
+            await self.db.commit()
+            await self.db.refresh(chat_session)
+            session_id = chat_session.id
+        elif chat_session.title in ["New Chat", "New Consultation"]:
             first_line = user_content.strip().split('\n')[0][:40]
             if first_line:
                 chat_session.title = first_line
@@ -146,16 +149,19 @@ class LegalChatService:
         """
         import json
 
-        # Step 1: Verify session ownership
+        # Step 1: Verify session ownership (or auto-create if missing/stale session ID passed)
         session_result = await self.db.execute(
             select(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == user_id)
         )
         chat_session = session_result.scalar_one_or_none()
         if not chat_session:
-            raise HTTPException(status_code=404, detail="Chat session not found")
-
-        # Auto-title session from user's first prompt if title is default
-        if chat_session.title in ["New Chat", "New Consultation"]:
+            title_text = user_content.strip().split('\n')[0][:40] or "New Chat"
+            chat_session = ChatSession(user_id=user_id, title=title_text)
+            self.db.add(chat_session)
+            await self.db.commit()
+            await self.db.refresh(chat_session)
+            session_id = chat_session.id
+        elif chat_session.title in ["New Chat", "New Consultation"]:
             first_line = user_content.strip().split('\n')[0][:40]
             if first_line:
                 chat_session.title = first_line

@@ -106,6 +106,12 @@ export default function Chat() {
   const fetchMessages = async (sessionId) => {
     try {
       const res = await fetch(`http://localhost:8000/api/v1/chat/sessions/${sessionId}/messages`, { headers: getAuthHeaders() });
+      if (res.status === 404) {
+        setSessions(prev => prev.filter(s => s.id !== sessionId));
+        setActiveSession(null);
+        setMessages([]);
+        return;
+      }
       if (!res.ok) throw new Error('Failed to load messages');
       const data = await res.json();
       setMessages(data);
