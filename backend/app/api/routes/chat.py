@@ -120,14 +120,14 @@ async def delete_chat_session(
     Delete a chat session and all associated messages.
     """
     check_not_admin(current_user)
-    session_result = await session.execute(
-        select(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == current_user.id)
+    # Use direct DELETE query to avoid MissingGreenlet on relationship cascades in async mode
+    from sqlalchemy import delete
+    result = await session.execute(
+        delete(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == current_user.id)
     )
-    chat_session = session_result.scalar_one_or_none()
-    if not chat_session:
+    if result.rowcount == 0:
         raise HTTPException(status_code=404, detail="Chat session not found")
         
-    await session.delete(chat_session)
     await session.commit()
     return {"message": "Session deleted successfully", "id": session_id}
 
@@ -140,12 +140,10 @@ async def delete_all_chat_sessions(
     Delete all chat sessions and history for the current user.
     """
     check_not_admin(current_user)
-    result = await session.execute(
-        select(ChatSession).where(ChatSession.user_id == current_user.id)
+    from sqlalchemy import delete
+    await session.execute(
+        delete(ChatSession).where(ChatSession.user_id == current_user.id)
     )
-    user_sessions = result.scalars().all()
-    for s in user_sessions:
-        await session.delete(s)
     await session.commit()
     return {"message": "All chat sessions deleted successfully"}
 
