@@ -86,7 +86,8 @@ export default function Chat() {
     setMessages([]);
     setActiveSession(null);
     try {
-      const res = await fetch('http://localhost:8000/api/v1/chat/sessions', { headers: getAuthHeaders() });
+      const timestamp = new Date().getTime();
+      const res = await fetch(`http://localhost:8000/api/v1/chat/sessions?t=${timestamp}`, { headers: getAuthHeaders() });
       if (res.status === 403) {
         throw new Error('Access denied');
       }
@@ -105,7 +106,8 @@ export default function Chat() {
 
   const fetchMessages = async (sessionId) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/chat/sessions/${sessionId}/messages`, { headers: getAuthHeaders() });
+      const timestamp = new Date().getTime();
+      const res = await fetch(`http://localhost:8000/api/v1/chat/sessions/${sessionId}/messages?t=${timestamp}`, { headers: getAuthHeaders() });
       if (res.status === 404) {
         setSessions(prev => prev.filter(s => s.id !== sessionId));
         setActiveSession(null);
