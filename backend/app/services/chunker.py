@@ -34,11 +34,15 @@ class LegalChunker:
     @staticmethod
     def split_pages(pages: List[Dict[str, any]], chunk_size: int = 1500, chunk_overlap: int = 200) -> List[Dict[str, any]]:
         """
-        Splits page-level document dictionaries, tracking page_number for each chunk.
+        Splits page-level document dictionaries, tracking page_number and hierarchical sections.
         """
         separators = ["\n\n\n", "\n\n", "\n", ". ", " ", ""]
         chunks = []
         global_chunk_idx = 0
+        current_section = "General Content"
+        
+        # Regex to match headers at the START of a line
+        header_pattern = re.compile(r'^\s*(?:Section\s+\d+[a-zA-Z]?|Article\s+[IVXLCDM\d]+|Clause\s+\d+(?:\.\d+)?|Chapter\s+[IVXLCDM\d]+)\b', re.IGNORECASE | re.MULTILINE)
 
         for page in pages:
             page_num = page.get("page_number", 1)
@@ -46,18 +50,24 @@ class LegalChunker:
             if not page_text:
                 continue
 
+            # Find all headers on this page to update context
             raw_chunks = LegalChunker._recursive_split(page_text, chunk_size, chunk_overlap, separators)
+            
             for chunk in raw_chunks:
                 if not chunk.strip():
                     continue
-                section_match = re.search(r'(Section\s+\d+|Article\s+[I|V|X|L|C|D|M\d]+|Clause\s+\d+(\.\d+)?)', chunk, re.IGNORECASE)
-                detected_section = section_match.group(0) if section_match else f"General Content (Chunk {global_chunk_idx+1})"
+                
+                # Check if this chunk contains a new header at the start of a line
+                matches = list(header_pattern.finditer(chunk))
+                if matches:
+                    # Take the last header found in this chunk as the active section context
+                    current_section = matches[-1].group(0).strip()
                 
                 chunks.append({
                     "text": chunk,
                     "metadata": {
                         "chunk_index": global_chunk_idx,
-                        "estimated_section": detected_section,
+                        "estimated_section": current_section,
                         "page_number": page_num,
                         "character_count": len(chunk)
                     }

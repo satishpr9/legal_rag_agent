@@ -4,12 +4,12 @@ from sentence_transformers import SentenceTransformer
 
 class GeminiEmbeddingClient:
     def __init__(self):
-        # We load the lightweight, fast open-source model locally
-        self.model_name = "all-MiniLM-L6-v2"
+        # We load the nomic-embed-text-v1.5 model for high-quality legal embeddings
+        self.model_name = "nomic-ai/nomic-embed-text-v1.5"
         try:
-            self.model = SentenceTransformer(self.model_name, local_files_only=True)
+            self.model = SentenceTransformer(self.model_name, local_files_only=True, trust_remote_code=True)
         except Exception:
-            self.model = SentenceTransformer(self.model_name)
+            self.model = SentenceTransformer(self.model_name, trust_remote_code=True)
         
     async def get_embedding(self, text: str) -> List[float]:
         """

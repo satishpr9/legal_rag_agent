@@ -1,6 +1,8 @@
 from typing import List, Dict, Any
 from app.services.embedding import GeminiEmbeddingClient
 from app.services.qdrant_service import QdrantService
+from rank_bm25 import BM25Okapi
+import re
 
 LEGAL_ACRONYMS = {
     "bns": "Bharatiya Nyaya Sanhita",
@@ -30,13 +32,17 @@ class LegalRetrievalService:
         self.embedding_client = GeminiEmbeddingClient()
         self.qdrant_service = QdrantService()
         
-    def expand_query(self, query: str) -> tuple[str, set[str]]:
+    def _tokenize(self, text: str) -> List[str]:
+        # Simple word tokenization for BM25
+        text = text.lower()
+        return [word for word in re.split(r'\W+', text) if word]
+        
+    def expand_query(self, query: str) -> str:
         """
         Expands legal acronyms in the query to improve both vector search and keyword matching.
-        Returns (expanded_query_string, set_of_query_keywords).
+        Returns expanded_query_string.
         """
         raw_words = query.lower().split()
-        stop_words = {"what", "is", "the", "of", "in", "to", "for", "with", "on", "at", "by", "an", "a", "this", "that", "and", "or"}
         
         expanded_phrases = []
         for word in raw_words:
@@ -45,19 +51,11 @@ class LegalRetrievalService:
                 expanded_phrases.append(LEGAL_ACRONYMS[clean_word])
                 
         if expanded_phrases:
-            search_query = f"{query} ({' '.join(expanded_phrases)})"
+            search_query = f"{query} {' '.join(expanded_phrases)}"
         else:
             search_query = query
-
-        # Extract keywords from both raw and expanded query
-        all_words = search_query.lower().split()
-        query_keywords = {
-            "".join(c for c in w if c.isalnum())
-            for w in all_words
-            if "".join(c for c in w if c.isalnum()) and "".join(c for c in w if c.isalnum()) not in stop_words
-        }
-        
-        return search_query, query_keywords
+            
+        return search_query
 
     async def retrieve_context(
         self, 
@@ -65,62 +63,69 @@ class LegalRetrievalService:
         limit: int = 5
     ) -> List[Dict[str, Any]]:
         """
-        Embeds the query (with acronym expansion) and searches Qdrant for relevant legal contexts.
-        Uses Hybrid Search logic: over-fetches candidates via vector search and re-ranks them based
-        on keyword overlap to prioritize exact matches for section headers and legal terms.
+        Embeds the query and searches Qdrant for relevant legal contexts.
+        Uses Hybrid Search logic: over-fetches candidates via vector search and re-ranks them 
+        based on BM25 sparse matching.
         """
         # Step 1: Expand acronyms and embed search query
-        search_query, query_keywords = self.expand_query(query)
+        search_query = self.expand_query(query)
         query_vector = await self.embedding_client.get_embedding(search_query)
         
-        # Step 2: Over-fetch candidates using Vector Search (fetch 3x of limit, minimum 15)
+        # Step 2: Over-fetch candidates using Vector Search (fetch 15x of limit to ensure good coverage)
         collection_name = "legal_documents"
-        candidate_limit = max(limit * 3, 15)
+        candidate_limit = max(limit * 15, 50)
         search_results = await self.qdrant_service.search_points(
             collection_name=collection_name,
             query_vector=query_vector,
             limit=candidate_limit
         )
         
-        # Step 3: Parse and compute local keyword re-scoring
-        retrieved_contexts = []
+        if not search_results:
+            return []
+            
+        # Step 3: Prepare BM25 local corpus
+        tokenized_corpus = []
+        parsed_results = []
+        
         for point in search_results:
             payload = point.get("payload", {})
-            text_content = payload.get("text", "").lower()
-            estimated_section = payload.get("estimated_section", "").lower()
-            
-            # Compute term match ratio
-            match_count = 0
-            if query_keywords:
-                for keyword in query_keywords:
-                    # Grant higher weight if match is found in the estimated section header itself
-                    if keyword in estimated_section:
-                        match_count += 1.5
-                    elif keyword in text_content:
-                        match_count += 1.0
-                match_ratio = match_count / len(query_keywords)
-            else:
-                match_ratio = 0.0
-                
-            # Hybrid Score = Semantic Vector Score + 0.3 * Keyword Match Ratio
             semantic_score = point.get("score", 0.0)
-            hybrid_score = semantic_score + (0.3 * match_ratio)
+            
+            # Text to run BM25 against (give extra weight to section headers by repeating them)
+            header = payload.get("estimated_section", "")
+            content = payload.get("text", "")
+            bm25_text = f"{header} {header} {content}"
+            tokenized_corpus.append(self._tokenize(bm25_text))
             
             doc_id = payload.get("document_id")
             filename = payload.get("filename") or (f"Document #{doc_id}" if doc_id else "Legal Document")
-            page_number = payload.get("page_number", 1)
-
-            retrieved_contexts.append({
-                "text": payload.get("text", ""),
-                "score": hybrid_score,
+            
+            parsed_results.append({
+                "text": content,
+                "semantic_score": semantic_score,
                 "document_id": doc_id,
                 "filename": filename,
-                "estimated_section": payload.get("estimated_section", "General"),
-                "page_number": page_number,
+                "estimated_section": header or "General",
+                "page_number": payload.get("page_number", 1),
                 "chunk_index": payload.get("chunk_index")
             })
             
-        # Step 4: Re-rank by hybrid score descending and slice to limit
-        retrieved_contexts.sort(key=lambda x: x["score"], reverse=True)
-        return retrieved_contexts[:limit]
+        # Step 4: Calculate BM25 scores
+        bm25 = BM25Okapi(tokenized_corpus)
+        tokenized_query = self._tokenize(search_query)
+        bm25_scores = bm25.get_scores(tokenized_query)
+        
+        # Normalize scores to 0-1 range for fair combination
+        max_bm25 = max(bm25_scores) if len(bm25_scores) > 0 and max(bm25_scores) > 0 else 1.0
+        max_semantic = max(r["semantic_score"] for r in parsed_results) if parsed_results else 1.0
+        
+        for i, res in enumerate(parsed_results):
+            norm_bm25 = bm25_scores[i] / max_bm25
+            norm_semantic = res["semantic_score"] / max_semantic
+            # Hybrid Score formula: 70% Semantic, 30% BM25
+            res["score"] = (0.7 * norm_semantic) + (0.3 * norm_bm25)
+            
+        # Step 5: Sort by hybrid score descending and slice to limit
+        parsed_results.sort(key=lambda x: x["score"], reverse=True)
+        return parsed_results[:limit]
 

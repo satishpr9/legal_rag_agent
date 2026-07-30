@@ -35,7 +35,7 @@ class QdrantService:
         res = await self._request("GET", f"/collections/{collection_name}")
         return res.get("status") != "not_found"
 
-    async def create_collection(self, collection_name: str, vector_size: int = 384) -> bool:
+    async def create_collection(self, collection_name: str, vector_size: int = 768) -> bool:
         payload = {
             "vectors": {
                 "size": vector_size,
@@ -63,7 +63,7 @@ class QdrantService:
         # Ensure collection exists before upserting
         exists = await self.collection_exists(collection_name)
         if not exists:
-            vector_size = len(points[0]["vector"]) if points else 384
+            vector_size = len(points[0]["vector"]) if points else 768
             await self.create_collection(collection_name, vector_size=vector_size)
             
         payload = {"points": points}
