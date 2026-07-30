@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Send, Scale, Plus, MessageSquare, History, FileText, ChevronRight, 
   AlertCircle, Sparkles, Search, Copy, Check, Info, BookOpen, Layers,
-  Trash2, Sliders, ExternalLink, LogOut, User, ShieldCheck
+  Trash2, Sliders, ExternalLink, LogOut, User, ShieldCheck, SquarePen
 } from 'lucide-react';
 
 export default function Chat() {
@@ -380,35 +380,96 @@ export default function Chat() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsSearchOpen(prev => !prev)}
-            className="btn btn-ghost btn-sm"
-            title="Search Consultations"
-            style={{
-              padding: '0.45rem',
-              borderRadius: '8px',
-              background: isSearchOpen || sessionSearch ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
-              color: isSearchOpen || sessionSearch ? 'var(--accent-primary)' : 'var(--text-subtle)',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <Search size={17} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(prev => !prev)}
+              className="btn btn-ghost btn-sm"
+              title="Search Consultations"
+              style={{
+                padding: '0.45rem',
+                borderRadius: '8px',
+                background: isSearchOpen || sessionSearch ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+                color: isSearchOpen || sessionSearch ? 'var(--accent-primary)' : 'var(--text-subtle)',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Search size={17} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleCreateSession()}
+              className="btn btn-ghost btn-sm"
+              title="New Chat"
+              style={{
+                padding: '0.45rem',
+                borderRadius: '8px',
+                background: 'transparent',
+                color: '#0f172a',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              <SquarePen size={17} color="var(--text-main)" />
+            </button>
+          </div>
         </div>
 
-        {/* New Session Button */}
+        {/* Modern ChatGPT-Style New Chat Pill Button */}
         <button
+          type="button"
           onClick={() => handleCreateSession()}
-          className="btn btn-primary"
-          style={{ width: '100%', marginBottom: '1.2rem', padding: '0.75rem' }}
+          style={{
+            width: '100%',
+            marginBottom: '1.2rem',
+            padding: '0.65rem 1rem',
+            borderRadius: '12px',
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+            color: '#0f172a',
+            fontSize: '0.88rem',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#f8fafc';
+            e.currentTarget.style.borderColor = '#cbd5e1';
+            e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.06)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#ffffff';
+            e.currentTarget.style.borderColor = '#e2e8f0';
+            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)';
+          }}
         >
-          <Plus size={18} />
-          <span>New Chat</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <SquarePen size={17} color="var(--accent-primary)" />
+            <span>New Chat</span>
+          </div>
+          <kbd style={{
+            fontSize: '0.68rem',
+            background: '#f1f5f9',
+            border: '1px solid #e2e8f0',
+            borderRadius: '4px',
+            padding: '0.1rem 0.35rem',
+            color: 'var(--text-subtle)'
+          }}>⌘N</kbd>
         </button>
 
         {/* Search Session Filter (Toggleable) */}
