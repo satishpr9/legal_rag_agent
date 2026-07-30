@@ -159,17 +159,13 @@ export default function Chat() {
       });
       if (!res.ok) throw new Error('Failed to delete chat session');
 
-      setSessions(prev => {
-        const updated = prev.filter(s => s.id !== sessionId);
-        if (activeSession?.id === sessionId) {
-          if (updated.length > 0) {
-            setActiveSession(updated[0]);
-          } else {
-            setActiveSession(null);
-            setMessages([]);
-          }
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      setActiveSession(prev => {
+        if (prev?.id === sessionId) {
+          setMessages([]);
+          return null;
         }
-        return updated;
+        return prev;
       });
     } catch (err) {
       setError(err.message || 'Failed to delete chat session');
