@@ -29,7 +29,9 @@ Thumbs.db
 backend/debug_*.py
 backend/scratch*.py
 backend/test_rag.py
-backend/tests/test_doc.txt
+backend/tests/
+backend/create_admin.py
+backend/wipe_vectors.py
 
 # Uploads
 backend/uploads/*.pdf
