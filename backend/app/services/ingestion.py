@@ -1,4 +1,6 @@
 import uuid
+import json
+import re
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException
@@ -8,12 +10,61 @@ from app.services.parser import DocumentParser
 from app.services.chunker import LegalChunker
 from app.services.embedding import GeminiEmbeddingClient
 from app.services.qdrant_service import QdrantService
+from app.services.gemini_chat import GeminiChatClient
 
 class DocumentIngestionManager:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.emb_client = GeminiEmbeddingClient()
         self.qdrant_service = QdrantService()
+        self.chat_client = GeminiChatClient()
+
+    async def _extract_metadata_from_pages(self, pages: list, filename: str) -> dict:
+        """
+        Uses an LLM to read the beginning of the document and extract metadata 
+        (e.g., case_name, date, court, statute_reference).
+        """
+        # Grab first ~3000 characters from the first few pages
+        context_text = ""
+        for p in pages[:3]:
+            context_text += p.get("text", "") + "\n"
+            if len(context_text) > 3000:
+                context_text = context_text[:3000]
+                break
+
+        if not context_text.strip():
+            return {}
+
+        prompt = f"""
+        You are a legal metadata extractor. Read the following text from the beginning of a legal document (filename: {filename}).
+        Extract the following fields if present:
+        - case_name
+        - date (year or full date)
+        - court
+        - statute_reference (e.g. IPC, CrPC, specific acts mentioned)
+
+        If a field is not found, leave it empty.
+        Return ONLY a raw JSON object containing these keys. No markdown blocks, no other text.
+        
+        Text:
+        {context_text}
+        """
+        try:
+            response = await self.chat_client.generate_response(
+                messages=[{"role": "user", "content": prompt}],
+                system_instruction="You output raw JSON only."
+            )
+            # Try to parse json, remove markdown block if present
+            clean_json = re.sub(r'```(?:json)?\s*([\s\S]*?)\s*```', r'\1', response.strip())
+            metadata = json.loads(clean_json)
+            # Ensure it's a dict
+            if isinstance(metadata, dict):
+                # Clean up empty values
+                return {k: str(v) for k, v in metadata.items() if v}
+        except Exception as e:
+            print(f"Failed to extract metadata: {e}")
+        
+        return {}
 
     async def ingest_document(self, document_id: int, file_path: str) -> None:
         """
@@ -32,12 +83,15 @@ class DocumentIngestionManager:
             await self.db.commit()
 
             # Step 2: Parse File Pages
-            pages = DocumentParser.parse_file_pages(file_path)
+            pages = await DocumentParser.parse_file_pages(file_path)
             if not pages or not any(p["text"].strip() for p in pages):
                 raise ValueError("Parsed document is empty")
 
-            # Step 3: Chunk Text with Page Tracking
-            chunks = LegalChunker.split_pages(pages)
+            # Step 2.5: Extract Global Metadata
+            global_metadata = await self._extract_metadata_from_pages(pages, doc_meta.filename)
+
+            # Step 3: Chunk Text with Page Tracking and Metadata
+            chunks = LegalChunker.split_pages(pages, global_metadata=global_metadata)
 
             # Step 4: Batch Embed Chunks (Gemini limits batch size to 100)
             chunk_texts = [c["text"] for c in chunks]
@@ -62,17 +116,18 @@ class DocumentIngestionManager:
             
             points = []
             for idx, chunk in enumerate(chunks):
+                payload = {
+                    "document_id": doc_meta.id,
+                    "filename": doc_meta.filename,
+                    "text": chunk["text"],
+                }
+                # Add all extracted and chunk-specific metadata
+                payload.update(chunk["metadata"])
+                
                 points.append({
                     "id": str(uuid.uuid4()),
                     "vector": embeddings[idx],
-                    "payload": {
-                        "document_id": doc_meta.id,
-                        "filename": doc_meta.filename,
-                        "text": chunk["text"],
-                        "estimated_section": chunk["metadata"]["estimated_section"],
-                        "page_number": chunk["metadata"].get("page_number", 1),
-                        "chunk_index": chunk["metadata"]["chunk_index"]
-                    }
+                    "payload": payload
                 })
 
             # Step 6: Upsert to Qdrant

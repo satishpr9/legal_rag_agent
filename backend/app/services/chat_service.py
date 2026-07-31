@@ -113,12 +113,24 @@ class LegalChatService:
 
             If NOT found:
 
-            Say:
-
-            "No relevant clause was found in the uploaded documents."
-
-            DO NOT explain general legal principles unless the user explicitly requests them.
-
+            If the uploaded context does not contain the answer, you must output exactly this format:
+            
+            Analysis of Uploaded Documents:
+            The uploaded documents do not contain information regarding [Topic].
+            
+            General Indian Law Context (Outside Uploaded Documents):
+            Disclaimer: This is based on general Indian law, not the uploaded document.
+            [Provide general law here ONLY if explicitly requested or if strict statutory defaults apply. Otherwise, provide no further legal advice.]
+            
+            Confidence: High (General Law) / N/A (Uploaded Document)
+            
+            =========================
+            STATE-LAW GUARDRAILS
+            =========================
+            Whenever Indian State Laws (like Shops & Establishments, RERA, or Rent Control Acts) come up, you MUST ALWAYS ask the user: 
+            "Which state's jurisdiction applies here?" 
+            before giving any state-specific section numbers or advice.
+            
             =========================
             LEGAL CONCEPT TEMPLATE
             =========================

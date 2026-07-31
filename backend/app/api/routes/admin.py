@@ -32,6 +32,12 @@ async def ingest_document(
     """
     Trigger ingestion of a backend file. Superuser only.
     """
+    # Check if document already exists
+    result = await session.execute(select(DocumentMetadata).where(DocumentMetadata.filename == ingest_in.filename))
+    existing_doc = result.scalar_one_or_none()
+    if existing_doc:
+        raise HTTPException(status_code=400, detail=f"A document with the name '{ingest_in.filename}' has already been uploaded.")
+
     # Create document metadata
     db_doc = DocumentMetadata(
         filename=ingest_in.filename,
@@ -82,6 +88,12 @@ async def upload_document(
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in [".pdf", ".docx", ".txt"]:
         raise HTTPException(status_code=400, detail="Unsupported file format. Only PDF, DOCX, and TXT are supported.")
+
+    # Check if document already exists
+    result = await session.execute(select(DocumentMetadata).where(DocumentMetadata.filename == file.filename))
+    existing_doc = result.scalar_one_or_none()
+    if existing_doc:
+        raise HTTPException(status_code=400, detail=f"A document with the name '{file.filename}' has already been uploaded.")
 
     # Sanitize and save the file
     sanitized_filename = os.path.basename(file.filename)
