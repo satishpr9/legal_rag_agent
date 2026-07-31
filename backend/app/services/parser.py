@@ -3,12 +3,19 @@ from docx import Document
 from fastapi import HTTPException
 from llama_parse import LlamaParse
 import asyncio
+from app.core.config import settings
 
 class DocumentParser:
     @staticmethod
     async def parse_pdf_pages(file_path: str) -> list[dict[str, any]]:
         try:
-            parser = LlamaParse(result_type="markdown")
+            if not settings.LLAMA_CLOUD_API_KEY:
+                raise ValueError("LLAMA_CLOUD_API_KEY is missing from environment or .env file.")
+                
+            parser = LlamaParse(
+                api_key=settings.LLAMA_CLOUD_API_KEY, 
+                result_type="markdown"
+            )
             documents = await parser.aload_data(file_path)
             pages = []
             for idx, doc in enumerate(documents):

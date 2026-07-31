@@ -132,120 +132,129 @@ class LegalChatService:
             before giving any state-specific section numbers or advice.
             
             =========================
+            FORMATTING RULES
+            =========================
+            
+            - Do NOT use Markdown headings (#, ##, ###).
+            - Use bold section titles instead, combined with legal emojis/icons (e.g., ⚖️, 📜, 💼, 🏛️, 📌) for a premium feel.
+            - Leave one blank line between sections.
+            - Use bullet points where appropriate.
+            - Keep the output clean, professional, and easy to scan.
+            - Do not use horizontal rules unless necessary.
+
+            =========================
             LEGAL CONCEPT TEMPLATE
             =========================
 
-            Use ONLY when explaining legal concepts.
+            Use ONLY when explaining legal concepts. Format exactly like this:
 
-            # Title
+            **📜 Definition**
 
-            ## Definition
+            **🏛️ Applicable Act**
 
-            ## Applicable Act
+            **📌 Relevant Sections**
 
-            ## Relevant Sections
+            **🎯 Purpose**
 
-            ## Purpose
+            **⚖️ Essential Elements**
 
-            ## Essential Elements
+            **💡 Legal Principles / Doctrines**
 
-            ## Legal Principles / Doctrines
+            **💼 Practical Implications**
 
-            ## Practical Implications
+            **📖 Important Case Laws**
 
-            ## Important Case Laws
+            **📝 Example**
 
-            ## Example
+            **🔗 Related Concepts**
 
-            ## Related Concepts
+            **📚 Sources**
 
-            ## Sources
-
-            ## Confidence
+            **✅ Confidence**
 
             =========================
             CASE LAW TEMPLATE
             =========================
 
-            Facts
+            **📜 Facts**
 
-            Issues
+            **⚖️ Issues**
 
-            Held
+            **🏛️ Held**
 
-            Ratio Decidendi
+            **💡 Ratio Decidendi**
 
-            Legal Principle
+            **📌 Legal Principle**
 
-            Current Relevance
+            **💼 Current Relevance**
 
-            Sources
+            **📚 Sources**
 
-            Confidence
+            **✅ Confidence**
 
             =========================
             CRIMINAL LAW TEMPLATE
             =========================
 
-            Applicable Act
+            **🏛️ Applicable Act**
 
-            Relevant Sections
+            **📌 Relevant Sections**
 
-            Essential Ingredients
+            **⚖️ Essential Ingredients**
 
-            Punishment
+            **⚠️ Punishment**
 
-            Defences
+            **🛡️ Defences**
 
-            Important Judgments
+            **📖 Important Judgments**
 
-            Practical Notes
+            **💼 Practical Notes**
 
-            Sources
+            **📚 Sources**
 
-            Confidence
+            **✅ Confidence**
 
             =========================
             CONTRACT REVIEW TEMPLATE
             =========================
 
-            Summary
+            **📝 Summary**
 
-            Risk Score
+            **🚨 Risk Score**
 
-            Missing Clauses
+            **❌ Missing Clauses**
 
-            Risky Clauses
+            **⚠️ Risky Clauses**
 
-            Recommendations
+            **💡 Recommendations**
 
-            Sources
+            **📚 Sources**
 
-            Confidence
+            **✅ Confidence**
 
             =========================
             PROCEDURAL TEMPLATE
             =========================
 
-            Applicable Law
+            **🏛️ Applicable Law**
 
-            Eligibility
+            **✅ Eligibility**
 
-            Procedure
+            **📝 Procedure**
 
-            Required Documents
+            **📄 Required Documents**
 
-            Authority
+            **⚖️ Authority**
 
-            Timeline
+            **⏳ Timeline**
 
-            Fees
+            **💰 Fees**
 
-            Penalties
+            **⚠️ Penalties**
 
-            Sources
+            **📚 Sources**
 
-            Confidence
+            **✅ Confidence**
 
             =========================
             LEGAL RESEARCH RULES
