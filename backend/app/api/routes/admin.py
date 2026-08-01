@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, File, UploadFile
+from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, File, UploadFile, Form
+from typing import Optional
 from app.api.deps import SessionDep, SuperUserDep
 from app.db.models import DocumentMetadata, User
 from app.schemas.document import DocumentIngestRequest, DocumentMetadataResponse
@@ -79,7 +80,12 @@ async def upload_document(
     background_tasks: BackgroundTasks,
     session: SessionDep,
     current_user: SuperUserDep,
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    workspace: Optional[str] = Form(None),
+    document_type: Optional[str] = Form(None),
+    industry: Optional[str] = Form(None),
+    jurisdiction: Optional[str] = Form(None),
+    state: Optional[str] = Form(None)
 ):
     """
     Upload a local file and ingest it. Superuser only.
@@ -105,6 +111,11 @@ async def upload_document(
     # Create document metadata
     db_doc = DocumentMetadata(
         filename=file.filename,
+        workspace=workspace,
+        document_type=document_type,
+        industry=industry,
+        jurisdiction=jurisdiction,
+        state=state,
         status="processing 0%"
     )
     session.add(db_doc)

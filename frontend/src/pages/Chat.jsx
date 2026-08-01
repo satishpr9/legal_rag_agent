@@ -6,6 +6,95 @@ import {
   Trash2, Sliders, ExternalLink, LogOut, User, ShieldCheck, SquarePen
 } from 'lucide-react';
 
+const CustomDropdown = ({ options, value, onChange, placeholder }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: '100%',
+          padding: '0.6rem 1rem',
+          fontSize: '0.85rem',
+          borderRadius: '8px',
+          border: '1px solid #cbd5e1',
+          background: '#ffffff',
+          color: value ? '#0f172a' : '#64748b',
+          fontWeight: value ? 600 : 400,
+          cursor: 'pointer',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          transition: 'all 0.2s ease',
+          boxShadow: isOpen ? '0 0 0 2px rgba(37,99,235,0.2)' : 'none'
+        }}
+      >
+        <span>{value || placeholder}</span>
+        <ChevronRight 
+          size={16} 
+          style={{ 
+            transform: isOpen ? 'rotate(-90deg)' : 'rotate(90deg)', 
+            transition: 'transform 0.2s ease',
+            color: '#64748b'
+          }} 
+        />
+      </div>
+      
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          marginTop: '0.4rem',
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          zIndex: 50,
+          maxHeight: '250px',
+          overflowY: 'auto'
+        }}>
+          {options.map((opt) => (
+            <div
+              key={opt}
+              onClick={() => {
+                onChange(opt);
+                setIsOpen(false);
+              }}
+              style={{
+                padding: '0.6rem 1rem',
+                fontSize: '0.85rem',
+                color: '#334155',
+                cursor: 'pointer',
+                background: value === opt ? 'rgba(37,99,235,0.05)' : 'transparent',
+                borderLeft: value === opt ? '3px solid var(--accent-primary)' : '3px solid transparent',
+                transition: 'background 0.15s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(37,99,235,0.05)'}
+              onMouseLeave={(e) => { if(value !== opt) e.currentTarget.style.background = 'transparent' }}
+            >
+              {opt}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function Chat() {
   const navigate = useNavigate();
 
@@ -104,7 +193,9 @@ export default function Chat() {
       const data = await res.json();
       setSessions(data);
       if (data.length > 0) {
-        setActiveSession(data[0]);
+        const savedSessionId = localStorage.getItem('activeSessionId');
+        const foundSession = data.find(s => s.id.toString() === savedSessionId);
+        setActiveSession(foundSession || data[0]);
       }
     } catch (err) {
       setError(err.message);
@@ -133,12 +224,14 @@ export default function Chat() {
 
   useEffect(() => {
     if (activeSession) {
+      localStorage.setItem('activeSessionId', activeSession.id);
       if (!sending) {
         fetchMessages(activeSession.id);
       }
       setIsRefPanelOpen(false);
       setActiveReferences(null);
     } else {
+      localStorage.removeItem('activeSessionId');
       setMessages([]);
     }
   }, [activeSession]);
@@ -439,76 +532,49 @@ export default function Chat() {
               <Search size={17} />
             </button>
 
-            <button
-              type="button"
-              onClick={() => handleNewChatClick()}
-              className="btn btn-ghost btn-sm"
-              title="New Chat"
-              style={{
-                padding: '0.45rem',
-                borderRadius: '8px',
-                background: 'transparent',
-                color: '#0f172a',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              <SquarePen size={17} color="var(--text-main)" />
-            </button>
+
           </div>
         </div>
 
-        {/* Modern ChatGPT-Style New Chat Pill Button */}
-        <button
-          type="button"
-          onClick={() => handleNewChatClick()}
-          style={{
-            width: '100%',
-            marginBottom: '1.2rem',
-            padding: '0.65rem 1rem',
-            borderRadius: '12px',
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-            color: '#0f172a',
-            fontSize: '0.88rem',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#f8fafc';
-            e.currentTarget.style.borderColor = '#cbd5e1';
-            e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.06)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#ffffff';
-            e.currentTarget.style.borderColor = '#e2e8f0';
-            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)';
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <SquarePen size={17} color="var(--accent-primary)" />
+        {/* Workspace Dropdown */}
+        <div style={{ marginBottom: '0.8rem' }}>
+          <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+            Workspace
+          </label>
+          <CustomDropdown 
+            options={['Corporate Law', 'Criminal Law', 'Constitution', 'Labour Law', 'Tax Law', 'Intellectual Property']}
+            value={chatFilters.workspace}
+            onChange={(val) => setChatFilters({...chatFilters, workspace: val})}
+            placeholder="Select Workspace"
+          />
+        </div>
+
+        {/* Small New Chat Icon Button */}
+        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.2rem' }}>
+          <button
+            type="button"
+            onClick={() => handleNewChatClick()}
+            style={{
+              padding: '0.4rem 0.6rem',
+              borderRadius: '6px',
+              background: 'transparent',
+              color: 'var(--accent-primary)',
+              border: '1px solid rgba(37, 99, 235, 0.2)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(37, 99, 235, 0.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <SquarePen size={14} />
             <span>New Chat</span>
-          </div>
-          <kbd style={{
-            fontSize: '0.68rem',
-            background: '#f1f5f9',
-            border: '1px solid #e2e8f0',
-            borderRadius: '4px',
-            padding: '0.1rem 0.35rem',
-            color: 'var(--text-subtle)'
-          }}>⌘N</kbd>
-        </button>
+          </button>
+        </div>
 
         {/* Search Session Filter (Toggleable) */}
         {(isSearchOpen || sessionSearch) && (
@@ -694,43 +760,7 @@ export default function Chat() {
         position: 'relative',
         background: '#f8fafc'
       }}>
-        {/* Clean ChatGPT-Style Top Bar */}
-        <header style={{
-          padding: '0.85rem 1.8rem',
-          borderBottom: '1px solid #e2e8f0',
-          background: '#ffffff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexShrink: 0
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'rgba(37, 99, 235, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent-primary)'
-            }}>
-              <Scale size={18} />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                {activeSession?.title || 'Legal Chat'}
-              </h2>
-            </div>
-          </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981' }}></span>
-              Ready
-            </span>
-          </div>
-        </header>
 
         {/* Message Thread */}
         <div style={{
@@ -915,49 +945,18 @@ export default function Chat() {
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '1.2rem', background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                  {/* Workspace */}
-                  <div>
-                    <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Workspace Domain</label>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      {['Corporate Law', 'Criminal Law', 'Constitution', 'Labour Law', 'Tax Law', 'Intellectual Property'].map(ws => (
-                        <button
-                          key={ws}
-                          onClick={() => setChatFilters({...chatFilters, workspace: ws})}
-                          style={{
-                            padding: '0.5rem 0.8rem',
-                            borderRadius: '8px',
-                            fontSize: '0.82rem',
-                            fontWeight: 600,
-                            border: chatFilters.workspace === ws ? '1px solid var(--accent-primary)' : '1px solid #e2e8f0',
-                            background: chatFilters.workspace === ws ? 'rgba(37, 99, 235, 0.08)' : '#f8fafc',
-                            color: chatFilters.workspace === ws ? 'var(--accent-primary)' : '#64748b',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          {ws}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {chatFilters.workspace === 'Labour Law' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', marginTop: '0.5rem', paddingTop: '1.2rem', borderTop: '1px dashed #e2e8f0' }}>
+                {chatFilters.workspace === 'Labour Law' ? (
+                  <div className="glass-card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '1.2rem', background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                       {/* Industry */}
                       <div>
                         <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Industry</label>
-                        <select 
-                          className="input-field"
+                        <CustomDropdown 
+                          options={['Information Technology (IT/ITES)', 'Railways', 'Banking', 'Manufacturing', 'Construction', 'Mining', 'Healthcare', 'Education', 'Retail', 'Hospitality', 'Government Department', 'PSU', 'Logistics', 'Telecom', 'Automobile', 'Aviation', 'Oil & Gas', 'Port & Shipping', 'MSME', 'Startup', 'Other']}
                           value={chatFilters.industry}
-                          onChange={(e) => setChatFilters({...chatFilters, industry: e.target.value})}
-                          style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                        >
-                          <option value="">Select Industry...</option>
-                          {['Information Technology (IT/ITES)', 'Railways', 'Banking', 'Manufacturing', 'Construction', 'Mining', 'Healthcare', 'Education', 'Retail', 'Hospitality', 'Government Department', 'PSU', 'Logistics', 'Telecom', 'Automobile', 'Aviation', 'Oil & Gas', 'Port & Shipping', 'MSME', 'Startup', 'Other'].map(ind => (
-                            <option key={ind} value={ind}>{ind}</option>
-                          ))}
-                        </select>
+                          onChange={(val) => setChatFilters({...chatFilters, industry: val})}
+                          placeholder="Select Industry..."
+                        />
                       </div>
 
                       {/* Jurisdiction & State Row */}
@@ -979,17 +978,19 @@ export default function Chat() {
                         {chatFilters.jurisdiction === 'State' && (
                           <div style={{ flex: 1, minWidth: '200px' }} className="animate-fade-in">
                             <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>State</label>
-                            <select 
-                              className="input-field"
+                            <CustomDropdown 
+                              options={[
+                                'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
+                                'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Goa', 
+                                'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 'Karnataka', 
+                                'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 
+                                'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 
+                                'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+                              ]}
                               value={chatFilters.state}
-                              onChange={(e) => setChatFilters({...chatFilters, state: e.target.value})}
-                              style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                            >
-                              <option value="">Select State...</option>
-                              {['Karnataka', 'Maharashtra', 'Delhi', 'Tamil Nadu', 'Uttar Pradesh', 'Gujarat', 'Telangana', 'Rajasthan', 'Kerala', 'Punjab'].map(st => (
-                                <option key={st} value={st}>{st}</option>
-                              ))}
-                            </select>
+                              onChange={(val) => setChatFilters({...chatFilters, state: val})}
+                              placeholder="Select State..."
+                            />
                           </div>
                         )}
                       </div>
@@ -1018,8 +1019,15 @@ export default function Chat() {
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+                      <p style={{ marginBottom: '0.5rem' }}>You have selected the <strong>{chatFilters.workspace}</strong> workspace.</p>
+                      <p>Ask a question below to start retrieving from this domain's knowledge base.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1101,9 +1109,7 @@ export default function Chat() {
             </button>
           </div>
 
-          <div style={{ fontSize: '0.71rem', color: 'var(--text-subtle)', marginTop: '0.45rem' }}>
-            Antigravity Legal AI provides research assistance. Verify statutory provisions against primary legal sources.
-          </div>
+
         </div>
       </main>
 

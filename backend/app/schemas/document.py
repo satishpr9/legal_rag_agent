@@ -10,6 +10,11 @@ class DocumentIngestRequest(DocumentMetadataBase):
 
 class DocumentMetadataResponse(DocumentMetadataBase):
     id: int
+    workspace: Optional[str] = None
+    document_type: Optional[str] = None
+    industry: Optional[str] = None
+    jurisdiction: Optional[str] = None
+    state: Optional[str] = None
     qdrant_collection_name: Optional[str] = None
     status: str
     created_at: datetime

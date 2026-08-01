@@ -89,6 +89,17 @@ class DocumentIngestionManager:
 
             # Step 2.5: Extract Global Metadata
             global_metadata = await self._extract_metadata_from_pages(pages, doc_meta.filename)
+            
+            if doc_meta.workspace:
+                global_metadata["workspace"] = doc_meta.workspace
+            if doc_meta.document_type:
+                global_metadata["document_type"] = doc_meta.document_type
+            if doc_meta.industry:
+                global_metadata["industry"] = doc_meta.industry
+            if doc_meta.jurisdiction:
+                global_metadata["jurisdiction"] = doc_meta.jurisdiction
+            if doc_meta.state:
+                global_metadata["state"] = doc_meta.state
 
             # Step 3: Chunk Text with Page Tracking and Metadata
             chunks = LegalChunker.split_pages(pages, global_metadata=global_metadata)
