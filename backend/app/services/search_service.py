@@ -60,7 +60,8 @@ class LegalRetrievalService:
     async def retrieve_context(
         self, 
         query: str, 
-        limit: int = 5
+        limit: int = 5,
+        filters: dict = None
     ) -> List[Dict[str, Any]]:
         """
         Embeds the query and searches Qdrant for relevant legal contexts.
@@ -74,10 +75,23 @@ class LegalRetrievalService:
         # Step 2: Over-fetch candidates using Vector Search (fetch 15x of limit to ensure good coverage)
         collection_name = "legal_documents"
         candidate_limit = max(limit * 15, 50)
+        
+        qdrant_filter = None
+        if filters:
+            must_clauses = []
+            for k, v in filters.items():
+                if isinstance(v, list) and v:
+                    must_clauses.append({"key": k, "match": {"any": v}})
+                elif v:
+                    must_clauses.append({"key": k, "match": {"value": v}})
+            if must_clauses:
+                qdrant_filter = {"must": must_clauses}
+                
         search_results = await self.qdrant_service.search_points(
             collection_name=collection_name,
             query_vector=query_vector,
-            limit=candidate_limit
+            limit=candidate_limit,
+            qdrant_filter=qdrant_filter
         )
         
         if not search_results:

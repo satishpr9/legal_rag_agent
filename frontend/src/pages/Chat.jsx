@@ -36,6 +36,15 @@ export default function Chat() {
   const [activeReferences, setActiveReferences] = useState(null);
   const [isRefPanelOpen, setIsRefPanelOpen] = useState(false);
 
+  // Workspace Filters State
+  const [chatFilters, setChatFilters] = useState({
+    workspace: 'Labour Law',
+    industry: '',
+    jurisdiction: '',
+    state: '',
+    acts: []
+  });
+
   // Status States
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -134,13 +143,15 @@ export default function Chat() {
     }
   }, [activeSession]);
 
-  const handleCreateSession = async (titleText = "New Chat") => {
+  const handleCreateSession = async (titleText = "New Chat", customFilters = null) => {
     try {
       const headers = { 'Content-Type': 'application/json', ...getAuthHeaders() };
+      const body = { title: titleText };
+      if (customFilters) body.filters = customFilters;
       const res = await fetch('http://localhost:8000/api/v1/chat/sessions', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ title: titleText })
+        body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error('Failed to create session');
       const data = await res.json();
@@ -152,6 +163,18 @@ export default function Chat() {
       return null;
     }
   };
+  const handleNewChatClick = () => {
+    setActiveSession(null);
+    setMessages([]);
+    setChatFilters({
+      workspace: 'Labour Law',
+      industry: '',
+      jurisdiction: '',
+      state: '',
+      acts: []
+    });
+  };
+
 
   const handleDeleteSession = async (sessionId, e) => {
     if (e) e.stopPropagation();
@@ -204,7 +227,7 @@ export default function Chat() {
 
     let targetSession = activeSession;
     if (!targetSession) {
-      targetSession = await handleCreateSession(text.trim().split('\n')[0].slice(0, 40) || "New Chat");
+      targetSession = await handleCreateSession(text.trim().split('\n')[0].slice(0, 40) || "New Chat", chatFilters);
       if (!targetSession) return;
     }
 
@@ -418,7 +441,7 @@ export default function Chat() {
 
             <button
               type="button"
-              onClick={() => handleCreateSession()}
+              onClick={() => handleNewChatClick()}
               className="btn btn-ghost btn-sm"
               title="New Chat"
               style={{
@@ -444,7 +467,7 @@ export default function Chat() {
         {/* Modern ChatGPT-Style New Chat Pill Button */}
         <button
           type="button"
-          onClick={() => handleCreateSession()}
+          onClick={() => handleNewChatClick()}
           style={{
             width: '100%',
             marginBottom: '1.2rem',
@@ -862,64 +885,141 @@ export default function Chat() {
               );
             })
           ) : (
-            /* Empty State with Prompt Suggestions */
+            /* Empty State with Workspace Filters */
             <div style={{
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-              padding: '2rem'
+              padding: '2rem 1rem',
+              overflowY: 'auto'
             }}>
               <div style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '14px',
-                background: 'rgba(37, 99, 235, 0.08)',
-                border: '1px solid var(--accent-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '1.2rem'
-              }}>
-                <Scale size={30} color="var(--accent-primary)" />
-              </div>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', color: '#0f172a' }}>
-                Legal AI Consultation Hub
-              </h3>
-              <p style={{ color: 'var(--text-muted)', maxWidth: '520px', fontSize: '0.92rem', marginBottom: '2rem' }}>
-                Ask complex statutory questions, review contracts for liability risks, or extract statutory citations grounded in indexed document repositories with PDF page references.
-              </p>
-
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: '1rem',
                 width: '100%',
-                maxWidth: '750px'
+                maxWidth: '750px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.2rem'
               }}>
-                {promptSuggestions.map((prompt, i) => (
-                  <div
-                    key={i}
-                    onClick={() => handleSendMessage(prompt.query)}
-                    className="glass-card glass-card-hover"
-                    style={{
-                      padding: '1.1rem',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      borderRadius: 'var(--radius-md)'
-                    }}
-                  >
-                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--accent-primary)', marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Sparkles size={14} />
-                      {prompt.title}
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                      "{prompt.query}"
-                    </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.5rem' }}>
+                  <div style={{
+                    width: '45px', height: '45px', borderRadius: '12px',
+                    background: 'rgba(37, 99, 235, 0.08)', border: '1px solid var(--accent-primary)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    <Scale size={24} color="var(--accent-primary)" />
                   </div>
-                ))}
+                  <div>
+                    <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Workspace Configuration</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0.2rem 0 0 0' }}>Configure your legal domain context to improve retrieval precision before starting.</p>
+                  </div>
+                </div>
+
+                <div className="glass-card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '1.2rem', background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                  {/* Workspace */}
+                  <div>
+                    <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Workspace Domain</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {['Corporate Law', 'Criminal Law', 'Constitution', 'Labour Law', 'Tax Law', 'Intellectual Property'].map(ws => (
+                        <button
+                          key={ws}
+                          onClick={() => setChatFilters({...chatFilters, workspace: ws})}
+                          style={{
+                            padding: '0.5rem 0.8rem',
+                            borderRadius: '8px',
+                            fontSize: '0.82rem',
+                            fontWeight: 600,
+                            border: chatFilters.workspace === ws ? '1px solid var(--accent-primary)' : '1px solid #e2e8f0',
+                            background: chatFilters.workspace === ws ? 'rgba(37, 99, 235, 0.08)' : '#f8fafc',
+                            color: chatFilters.workspace === ws ? 'var(--accent-primary)' : '#64748b',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {ws}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {chatFilters.workspace === 'Labour Law' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', marginTop: '0.5rem', paddingTop: '1.2rem', borderTop: '1px dashed #e2e8f0' }}>
+                      {/* Industry */}
+                      <div>
+                        <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Industry</label>
+                        <select 
+                          className="input-field"
+                          value={chatFilters.industry}
+                          onChange={(e) => setChatFilters({...chatFilters, industry: e.target.value})}
+                          style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                        >
+                          <option value="">Select Industry...</option>
+                          {['Information Technology (IT/ITES)', 'Railways', 'Banking', 'Manufacturing', 'Construction', 'Mining', 'Healthcare', 'Education', 'Retail', 'Hospitality', 'Government Department', 'PSU', 'Logistics', 'Telecom', 'Automobile', 'Aviation', 'Oil & Gas', 'Port & Shipping', 'MSME', 'Startup', 'Other'].map(ind => (
+                            <option key={ind} value={ind}>{ind}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Jurisdiction & State Row */}
+                      <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: '200px' }}>
+                          <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Jurisdiction</label>
+                          <div style={{ display: 'flex', gap: '1rem', padding: '0.6rem 0' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 500, color: '#334155' }}>
+                              <input type="radio" name="jurisdiction" checked={chatFilters.jurisdiction === 'Central'} onChange={() => setChatFilters({...chatFilters, jurisdiction: 'Central', state: ''})} style={{ accentColor: 'var(--accent-primary)', width: '16px', height: '16px' }} />
+                              Central
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 500, color: '#334155' }}>
+                              <input type="radio" name="jurisdiction" checked={chatFilters.jurisdiction === 'State'} onChange={() => setChatFilters({...chatFilters, jurisdiction: 'State'})} style={{ accentColor: 'var(--accent-primary)', width: '16px', height: '16px' }} />
+                              State
+                            </label>
+                          </div>
+                        </div>
+
+                        {chatFilters.jurisdiction === 'State' && (
+                          <div style={{ flex: 1, minWidth: '200px' }} className="animate-fade-in">
+                            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>State</label>
+                            <select 
+                              className="input-field"
+                              value={chatFilters.state}
+                              onChange={(e) => setChatFilters({...chatFilters, state: e.target.value})}
+                              style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                            >
+                              <option value="">Select State...</option>
+                              {['Karnataka', 'Maharashtra', 'Delhi', 'Tamil Nadu', 'Uttar Pradesh', 'Gujarat', 'Telangana', 'Rajasthan', 'Kerala', 'Punjab'].map(st => (
+                                <option key={st} value={st}>{st}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Acts */}
+                      <div>
+                        <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Applicable Acts</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.8rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                          {['Code on Wages, 2019', 'Industrial Relations Code, 2020', 'OSH Code, 2020', 'Social Security Code, 2020', 'Shops and Establishments Act', 'Minimum Wages', 'Payment of Wages', 'EPF', 'ESI', 'Bonus', 'Gratuity', 'Maternity Benefit', 'Equal Remuneration', 'Contract Labour', 'Apprentices', 'Factory Rules'].map(act => (
+                            <label key={act} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', cursor: 'pointer', color: '#334155', fontWeight: 500 }}>
+                              <input 
+                                type="checkbox" 
+                                checked={chatFilters.acts.includes(act)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setChatFilters({...chatFilters, acts: [...chatFilters.acts, act]});
+                                  } else {
+                                    setChatFilters({...chatFilters, acts: chatFilters.acts.filter(a => a !== act)});
+                                  }
+                                }}
+                                style={{ accentColor: 'var(--accent-primary)', width: '16px', height: '16px', borderRadius: '4px' }}
+                              />
+                              {act}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

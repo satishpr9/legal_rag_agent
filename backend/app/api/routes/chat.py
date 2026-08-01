@@ -23,7 +23,8 @@ async def create_chat_session(
     check_not_admin(current_user)
     db_session = ChatSession(
         user_id=current_user.id,
-        title=session_in.title
+        title=session_in.title,
+        filters=session_in.filters
     )
     session.add(db_session)
     await session.commit()

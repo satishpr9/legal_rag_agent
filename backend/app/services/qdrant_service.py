@@ -71,7 +71,7 @@ class QdrantService:
         return res.get("status") == "ok"
 
     async def search_points(
-        self, collection_name: str, query_vector: List[float], limit: int = 5
+        self, collection_name: str, query_vector: List[float], limit: int = 5, qdrant_filter: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """
         Searches for similar vectors. Returns results containing payload and similarity score.
@@ -86,6 +86,8 @@ class QdrantService:
             "with_payload": True,
             "with_vector": False
         }
+        if qdrant_filter:
+            payload["filter"] = qdrant_filter
         res = await self._request("POST", f"/collections/{collection_name}/points/search", payload)
         return res.get("result", [])
 

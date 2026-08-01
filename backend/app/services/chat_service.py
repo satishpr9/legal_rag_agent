@@ -79,7 +79,7 @@ class LegalChatService:
         # Step 2: Retrieve relevant legal context & historical messages concurrently
         import asyncio
         retrieved_chunks, history = await asyncio.gather(
-            self.retrieval_service.retrieve_context(query=user_content, limit=4),
+            self.retrieval_service.retrieve_context(query=user_content, limit=4, filters=chat_session.filters),
             self.get_session_history(session_id, user_id)
         )
 
@@ -157,7 +157,7 @@ class LegalChatService:
         import asyncio
         history, retrieved_chunks = await asyncio.gather(
             self.get_session_history(session_id, user_id),
-            self.retrieval_service.retrieve_context(query=user_content, limit=4)
+            self.retrieval_service.retrieve_context(query=user_content, limit=4, filters=chat_session.filters)
         )
 
         # Compute Confidence Level

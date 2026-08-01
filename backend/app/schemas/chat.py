@@ -4,10 +4,12 @@ from datetime import datetime
 
 class ChatSessionCreate(BaseModel):
     title: Optional[str] = "New Chat"
+    filters: Optional[dict] = None
 
 class ChatSessionResponse(BaseModel):
     id: int
     title: str
+    filters: Optional[dict] = None
     created_at: datetime
 
     class Config:
