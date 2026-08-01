@@ -32,6 +32,7 @@ backend/test_rag.py
 backend/tests/
 backend/create_admin.py
 backend/wipe_vectors.py
+backend/alter_db*.py
 
 # Uploads
 backend/uploads/*.pdf
