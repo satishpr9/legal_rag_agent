@@ -724,6 +724,9 @@ export default function Admin() {
                       <option value="Labour Law">Labour Law</option>
                       <option value="Corporate Law">Corporate Law</option>
                       <option value="Criminal Law">Criminal Law</option>
+                      <option value="Constitution">Constitution</option>
+                      <option value="Tax Law">Tax Law</option>
+                      <option value="Intellectual Property">Intellectual Property</option>
                     </select>
                   </div>
  

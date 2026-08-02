@@ -50,14 +50,32 @@ async def ingest_document(
     await session.refresh(db_doc)
 
     # Ingest document in background
-    ingestion_manager = DocumentIngestionManager(session)
+    from app.db.session import AsyncSessionLocal
+    async def bg_ingest(doc_id: int, path: str):
+        async with AsyncSessionLocal() as bg_session:
+            ingestion_manager = DocumentIngestionManager(bg_session)
+            await ingestion_manager.ingest_document(document_id=doc_id, file_path=path)
+
     background_tasks.add_task(
-        ingestion_manager.ingest_document,
-        document_id=db_doc.id,
-        file_path=ingest_in.file_path
+        bg_ingest,
+        doc_id=db_doc.id,
+        path=ingest_in.file_path
     )
 
     return db_doc
+
+@router.websocket("/documents/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time document ingestion progress.
+    """
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Client doesn't need to send anything, but we keep the connection open
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 @router.get("/documents", response_model=list[DocumentMetadataResponse])
 async def list_documents(
@@ -116,11 +134,16 @@ async def upload_document(
     await session.refresh(db_doc)
 
     # Ingest document in background
-    ingestion_manager = DocumentIngestionManager(session)
+    from app.db.session import AsyncSessionLocal
+    async def bg_ingest_upload(doc_id: int, path: str):
+        async with AsyncSessionLocal() as bg_session:
+            ingestion_manager = DocumentIngestionManager(bg_session)
+            await ingestion_manager.ingest_document(document_id=doc_id, file_path=path)
+
     background_tasks.add_task(
-        ingestion_manager.ingest_document,
-        document_id=db_doc.id,
-        file_path=saved_path
+        bg_ingest_upload,
+        doc_id=db_doc.id,
+        path=saved_path
     )
 
     return db_doc
@@ -173,16 +196,3 @@ async def delete_user(
     await session.delete(user_to_delete)
     await session.commit()
     return {"status": "success", "message": f"User {user_id} deleted successfully"}
-
-@router.websocket("/documents/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    """
-    WebSocket endpoint for real-time document ingestion progress.
-    """
-    await manager.connect(websocket)
-    try:
-        while True:
-            # Client doesn't need to send anything, but we keep the connection open
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)

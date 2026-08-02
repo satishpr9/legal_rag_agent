@@ -238,5 +238,9 @@ class DocumentIngestionManager:
 
         except Exception as e:
             # Handle failure
+            import traceback
+            print(f"[ERROR] Ingestion pipeline failed for {doc_meta.filename}: {str(e)}")
+            traceback.print_exc()
             await self._update_status(doc_meta, "failed")
-            raise HTTPException(status_code=500, detail=f"Ingestion pipeline failed: {str(e)}")
+            # Do NOT raise HTTPException in a background task, as the HTTP response 
+            # has already been sent to the client, leading to a RuntimeError.
