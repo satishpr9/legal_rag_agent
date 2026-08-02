@@ -2,14 +2,21 @@ import asyncio
 from typing import List
 from sentence_transformers import SentenceTransformer
 
+_GLOBAL_MODEL = None
+
 class GeminiEmbeddingClient:
     def __init__(self):
         # We load the nomic-embed-text-v1.5 model for high-quality legal embeddings
         self.model_name = "nomic-ai/nomic-embed-text-v1.5"
-        try:
-            self.model = SentenceTransformer(self.model_name, local_files_only=True, trust_remote_code=True)
-        except Exception:
-            self.model = SentenceTransformer(self.model_name, trust_remote_code=True)
+        
+    def _get_model(self):
+        global _GLOBAL_MODEL
+        if _GLOBAL_MODEL is None:
+            try:
+                _GLOBAL_MODEL = SentenceTransformer(self.model_name, local_files_only=True, trust_remote_code=True)
+            except Exception:
+                _GLOBAL_MODEL = SentenceTransformer(self.model_name, trust_remote_code=True)
+        return _GLOBAL_MODEL
         
     async def get_embedding(self, text: str) -> List[float]:
         """
@@ -17,7 +24,7 @@ class GeminiEmbeddingClient:
         """
         loop = asyncio.get_running_loop()
         embedding = await loop.run_in_executor(
-            None, lambda: self.model.encode(text, convert_to_numpy=True).tolist()
+            None, lambda: self._get_model().encode(text, convert_to_numpy=True).tolist()
         )
         return embedding
 
@@ -30,6 +37,6 @@ class GeminiEmbeddingClient:
             
         loop = asyncio.get_running_loop()
         embeddings = await loop.run_in_executor(
-            None, lambda: self.model.encode(texts, convert_to_numpy=True).tolist()
+            None, lambda: self._get_model().encode(texts, convert_to_numpy=True).tolist()
         )
         return embeddings

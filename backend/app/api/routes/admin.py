@@ -81,11 +81,7 @@ async def upload_document(
     session: SessionDep,
     current_user: SuperUserDep,
     file: UploadFile = File(...),
-    workspace: Optional[str] = Form(None),
-    document_type: Optional[str] = Form(None),
-    industry: Optional[str] = Form(None),
-    jurisdiction: Optional[str] = Form(None),
-    state: Optional[str] = Form(None)
+    workspace: Optional[str] = Form(None)
 ):
     """
     Upload a local file and ingest it. Superuser only.
@@ -112,10 +108,6 @@ async def upload_document(
     db_doc = DocumentMetadata(
         filename=file.filename,
         workspace=workspace,
-        document_type=document_type,
-        industry=industry,
-        jurisdiction=jurisdiction,
-        state=state,
         status="processing 0%"
     )
     session.add(db_doc)

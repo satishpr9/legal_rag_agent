@@ -127,11 +127,7 @@ export default function Chat() {
 
   // Workspace Filters State
   const [chatFilters, setChatFilters] = useState({
-    workspace: 'Labour Law',
-    industry: '',
-    jurisdiction: '',
-    state: '',
-    acts: []
+    workspace: 'Labour Law'
   });
 
   // Status States
@@ -260,11 +256,7 @@ export default function Chat() {
     setActiveSession(null);
     setMessages([]);
     setChatFilters({
-      workspace: 'Labour Law',
-      industry: '',
-      jurisdiction: '',
-      state: '',
-      acts: []
+      workspace: 'Labour Law'
     });
   };
 
@@ -945,89 +937,12 @@ export default function Chat() {
                   </div>
                 </div>
 
-                {chatFilters.workspace === 'Labour Law' ? (
-                  <div className="glass-card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '1.2rem', background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                      {/* Industry */}
-                      <div>
-                        <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Industry</label>
-                        <CustomDropdown 
-                          options={['Information Technology (IT/ITES)', 'Railways', 'Banking', 'Manufacturing', 'Construction', 'Mining', 'Healthcare', 'Education', 'Retail', 'Hospitality', 'Government Department', 'PSU', 'Logistics', 'Telecom', 'Automobile', 'Aviation', 'Oil & Gas', 'Port & Shipping', 'MSME', 'Startup', 'Other']}
-                          value={chatFilters.industry}
-                          onChange={(val) => setChatFilters({...chatFilters, industry: val})}
-                          placeholder="Select Industry..."
-                        />
-                      </div>
-
-                      {/* Jurisdiction & State Row */}
-                      <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                        <div style={{ flex: 1, minWidth: '200px' }}>
-                          <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Jurisdiction</label>
-                          <div style={{ display: 'flex', gap: '1rem', padding: '0.6rem 0' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 500, color: '#334155' }}>
-                              <input type="radio" name="jurisdiction" checked={chatFilters.jurisdiction === 'Central'} onChange={() => setChatFilters({...chatFilters, jurisdiction: 'Central', state: ''})} style={{ accentColor: 'var(--accent-primary)', width: '16px', height: '16px' }} />
-                              Central
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 500, color: '#334155' }}>
-                              <input type="radio" name="jurisdiction" checked={chatFilters.jurisdiction === 'State'} onChange={() => setChatFilters({...chatFilters, jurisdiction: 'State'})} style={{ accentColor: 'var(--accent-primary)', width: '16px', height: '16px' }} />
-                              State
-                            </label>
-                          </div>
-                        </div>
-
-                        {chatFilters.jurisdiction === 'State' && (
-                          <div style={{ flex: 1, minWidth: '200px' }} className="animate-fade-in">
-                            <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>State</label>
-                            <CustomDropdown 
-                              options={[
-                                'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 
-                                'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Goa', 
-                                'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 'Karnataka', 
-                                'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 
-                                'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 
-                                'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
-                              ]}
-                              value={chatFilters.state}
-                              onChange={(val) => setChatFilters({...chatFilters, state: val})}
-                              placeholder="Select State..."
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Acts */}
-                      <div>
-                        <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Applicable Acts</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.8rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                          {['Code on Wages, 2019', 'Industrial Relations Code, 2020', 'OSH Code, 2020', 'Social Security Code, 2020', 'Shops and Establishments Act', 'Minimum Wages', 'Payment of Wages', 'EPF', 'ESI', 'Bonus', 'Gratuity', 'Maternity Benefit', 'Equal Remuneration', 'Contract Labour', 'Apprentices', 'Factory Rules'].map(act => (
-                            <label key={act} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', cursor: 'pointer', color: '#334155', fontWeight: 500 }}>
-                              <input 
-                                type="checkbox" 
-                                checked={chatFilters.acts.includes(act)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setChatFilters({...chatFilters, acts: [...chatFilters.acts, act]});
-                                  } else {
-                                    setChatFilters({...chatFilters, acts: chatFilters.acts.filter(a => a !== act)});
-                                  }
-                                }}
-                                style={{ accentColor: 'var(--accent-primary)', width: '16px', height: '16px', borderRadius: '4px' }}
-                              />
-                              {act}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
                   <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
                       <p style={{ marginBottom: '0.5rem' }}>You have selected the <strong>{chatFilters.workspace}</strong> workspace.</p>
                       <p>Ask a question below to start retrieving from this domain's knowledge base.</p>
                     </div>
                   </div>
-                )}
               </div>
             </div>
           )}

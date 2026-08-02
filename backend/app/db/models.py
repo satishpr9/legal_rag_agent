@@ -28,10 +28,6 @@ class DocumentMetadata(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=False)
     workspace = Column(String, nullable=True)
-    document_type = Column(String, nullable=True)
-    industry = Column(String, nullable=True)
-    jurisdiction = Column(String, nullable=True)
-    state = Column(String, nullable=True)
     qdrant_collection_name = Column(String)
     status = Column(String, default="processing 0%") # processing X%, completed, failed
     created_at = Column(DateTime(timezone=True), server_default=func.now())

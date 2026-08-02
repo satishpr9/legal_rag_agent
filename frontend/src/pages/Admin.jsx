@@ -23,11 +23,7 @@ export default function Admin() {
   const [userSearch, setUserSearch] = useState('');
   
   const [metadata, setMetadata] = useState({
-    workspace: 'Labour Law',
-    document_type: 'Act',
-    industry: 'All Industries',
-    jurisdiction: 'Central',
-    state: ''
+    workspace: 'Labour Law'
   });
 
   // Status States
@@ -169,12 +165,6 @@ export default function Admin() {
       const formData = new FormData();
       formData.append('file', selectedFile);
       if(metadata.workspace) formData.append('workspace', metadata.workspace);
-      if(metadata.document_type) formData.append('document_type', metadata.document_type);
-      if(metadata.industry) formData.append('industry', metadata.industry);
-      if(metadata.jurisdiction) formData.append('jurisdiction', metadata.jurisdiction);
-      if (metadata.jurisdiction === 'State' && metadata.state) {
-        formData.append('state', metadata.state);
-      }
 
       const res = await fetch('http://localhost:8000/api/v1/admin/documents/upload', {
         method: 'POST',
@@ -718,47 +708,8 @@ export default function Admin() {
                       <option value="Criminal Law">Criminal Law</option>
                     </select>
                   </div>
-                  <div>
-                    <label style={{ fontSize: '0.82rem', fontWeight: 700 }}>Document Type</label>
-                    <select className="input-field" value={metadata.document_type} onChange={(e) => setMetadata({...metadata, document_type: e.target.value})} style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem' }}>
-                      <option value="Act">Act</option>
-                      <option value="Rules">Rules</option>
-                      <option value="Notification">Notification</option>
-                      <option value="Circular">Circular</option>
-                      <option value="Judgment">Judgment</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '0.82rem', fontWeight: 700 }}>Industry</label>
-                      <select className="input-field" value={metadata.industry} onChange={(e) => setMetadata({...metadata, industry: e.target.value})} style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem' }}>
-                        <option value="All Industries">All Industries</option>
-                        <option value="IT">IT</option>
-                        <option value="Railway">Railway</option>
-                        <option value="Banking">Banking</option>
-                        <option value="Manufacturing">Manufacturing</option>
-                      </select>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: '0.82rem', fontWeight: 700 }}>Jurisdiction</label>
-                      <select className="input-field" value={metadata.jurisdiction} onChange={(e) => setMetadata({...metadata, jurisdiction: e.target.value})} style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem' }}>
-                        <option value="Central">Central</option>
-                        <option value="State">State</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  {metadata.jurisdiction === 'State' && (
-                    <div className="animate-fade-in">
-                      <label style={{ fontSize: '0.82rem', fontWeight: 700 }}>State</label>
-                      <select className="input-field" value={metadata.state} onChange={(e) => setMetadata({...metadata, state: e.target.value})} style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem' }}>
-                        <option value="">Select State...</option>
-                        <option value="Karnataka">Karnataka</option>
-                        <option value="Maharashtra">Maharashtra</option>
-                        <option value="Delhi">Delhi</option>
-                      </select>
-                    </div>
-                  )}
+ 
+ 
                 </div>
 
                 <button
