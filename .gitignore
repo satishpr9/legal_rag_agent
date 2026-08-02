@@ -34,5 +34,8 @@ backend/create_admin.py
 backend/wipe_vectors.py
 backend/alter_db*.py
 
-# Uploads
-backend/uploads/*.pdf
+# Uploads & Temp Data
+backend/uploads/*
+!backend/uploads/.gitkeep
+*.pdf
+
