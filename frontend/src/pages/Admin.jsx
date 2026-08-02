@@ -46,15 +46,33 @@ export default function Admin() {
   useEffect(() => {
     if (!profile) return;
     
-    const isProcessing = documents.some(doc => doc.status && doc.status.includes('processing'));
-    if (!isProcessing) return;
+    // Connect to the new WebSocket endpoint
+    const ws = new WebSocket('ws://localhost:8000/api/v1/admin/documents/ws');
     
-    const intervalId = setInterval(() => {
-      fetchDocuments();
-    }, 2500);
-    
-    return () => clearInterval(intervalId);
-  }, [profile, documents]);
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        // data format: { document_id, filename, status }
+        
+        // Use functional state update to patch the specific document's status
+        setDocuments(prevDocs => 
+          prevDocs.map(doc => 
+            doc.id === data.document_id ? { ...doc, status: data.status } : doc
+          )
+        );
+      } catch (err) {
+        console.error("Failed to parse WebSocket message:", err);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket connection closed.");
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [profile]);
 
   const fetchProfile = async () => {
     try {

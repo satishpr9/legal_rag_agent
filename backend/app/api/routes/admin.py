@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, File, UploadFile, Form
+from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, File, UploadFile, Form, WebSocket, WebSocketDisconnect
 from typing import Optional
 from app.api.deps import SessionDep, SuperUserDep
 from app.db.models import DocumentMetadata, User
@@ -9,6 +9,7 @@ from app.api.deps import CurrentUser
 from sqlalchemy.future import select
 import os
 import shutil
+from app.services.websocket_manager import manager
 
 router = APIRouter()
 
@@ -172,3 +173,16 @@ async def delete_user(
     await session.delete(user_to_delete)
     await session.commit()
     return {"status": "success", "message": f"User {user_id} deleted successfully"}
+
+@router.websocket("/documents/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time document ingestion progress.
+    """
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Client doesn't need to send anything, but we keep the connection open
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)

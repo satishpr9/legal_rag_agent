@@ -18,6 +18,7 @@ from app.services.embedding import GeminiEmbeddingClient
 from app.services.qdrant_service import QdrantService, QdrantVectorStoreManager
 from app.services.gemini_chat import GeminiChatClient
 from app.core.config import settings
+from app.services.websocket_manager import manager
 
 
 class DocumentIngestionManager:
@@ -29,6 +30,16 @@ class DocumentIngestionManager:
         self.qdrant_service = QdrantService()
         self.vector_store_manager = QdrantVectorStoreManager()
         self.chat_client = GeminiChatClient()
+
+    async def _update_status(self, doc_meta: DocumentMetadata, status: str):
+        doc_meta.status = status
+        await self.db.commit()
+        # Broadcast the status update to connected WebSocket clients
+        await manager.broadcast({
+            "document_id": doc_meta.id,
+            "filename": doc_meta.filename,
+            "status": status
+        })
 
     async def _extract_metadata_from_pages(self, pages: list, filename: str) -> dict:
         """
@@ -95,8 +106,7 @@ class DocumentIngestionManager:
 
         try:
             # Step 1: Update status to processing
-            doc_meta.status = "processing 0%"
-            await self.db.commit()
+            await self._update_status(doc_meta, "processing 0%")
 
             # Step 2: Parse file into LlamaIndex Documents
             documents = await asyncio.get_running_loop().run_in_executor(
@@ -105,8 +115,7 @@ class DocumentIngestionManager:
             if not documents or not any(doc.text.strip() for doc in documents):
                 raise ValueError("Parsed document is empty")
 
-            doc_meta.status = "processing 10%"
-            await self.db.commit()
+            await self._update_status(doc_meta, "processing 10%")
 
             # Step 3: Extract global metadata via LLM
             # Convert to legacy page format for metadata extraction
@@ -121,8 +130,7 @@ class DocumentIngestionManager:
             global_metadata["document_id"] = doc_meta.id
             global_metadata["filename"] = doc_meta.filename
 
-            doc_meta.status = "processing 20%"
-            await self.db.commit()
+            await self._update_status(doc_meta, "processing 20%")
 
             # Step 4: Hierarchical chunking via LlamaIndex HierarchicalNodeParser
             all_nodes = await asyncio.get_running_loop().run_in_executor(
@@ -133,8 +141,7 @@ class DocumentIngestionManager:
             leaf_nodes = self.chunker.get_leaf_nodes(all_nodes)
             parent_nodes = self.chunker.get_parent_nodes(all_nodes)
 
-            doc_meta.status = "processing 30%"
-            await self.db.commit()
+            await self._update_status(doc_meta, "processing 30%")
 
             # Step 5: Batch embed leaf nodes
             leaf_texts = [node.get_content() for node in leaf_nodes]
@@ -149,8 +156,7 @@ class DocumentIngestionManager:
                 embeddings.extend(batch_embeddings)
 
                 progress = 30 + int((len(embeddings) / max(len(leaf_texts), 1)) * 50)
-                doc_meta.status = f"processing {progress}%"
-                await self.db.commit()
+                await self._update_status(doc_meta, f"processing {progress}%")
 
             # Assign embeddings to leaf nodes
             for idx, node in enumerate(leaf_nodes):
@@ -215,8 +221,7 @@ class DocumentIngestionManager:
                         "payload": payload
                     })
 
-            doc_meta.status = "processing 85%"
-            await self.db.commit()
+            await self._update_status(doc_meta, "processing 85%")
 
             # Upsert in batches to avoid oversized requests
             upsert_batch_size = 100
@@ -225,8 +230,7 @@ class DocumentIngestionManager:
                 await self.qdrant_service.upsert_points(collection_name, batch)
 
             # Step 7: Update DB status to completed
-            doc_meta.status = "completed"
-            await self.db.commit()
+            await self._update_status(doc_meta, "completed")
 
             print(f"[OK] Ingestion complete: {doc_meta.filename} | "
                   f"{len(leaf_nodes)} leaf nodes, {len(parent_nodes)} parent nodes, "
@@ -234,6 +238,5 @@ class DocumentIngestionManager:
 
         except Exception as e:
             # Handle failure
-            doc_meta.status = "failed"
-            await self.db.commit()
+            await self._update_status(doc_meta, "failed")
             raise HTTPException(status_code=500, detail=f"Ingestion pipeline failed: {str(e)}")
