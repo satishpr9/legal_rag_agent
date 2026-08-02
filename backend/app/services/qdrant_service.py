@@ -2,6 +2,9 @@ import httpx
 import uuid
 from typing import List, Dict, Any, Optional
 from fastapi import HTTPException
+from qdrant_client import QdrantClient
+from llama_index.vector_stores.qdrant import QdrantVectorStore
+from app.core.config import settings
 
 class QdrantService:
     def __init__(self, host: str = "localhost", port: int = 6333):
@@ -22,7 +25,6 @@ class QdrantService:
                 else:
                     raise ValueError(f"Unsupported method: {method}")
                 
-                # We handle 404 manually for check-existence logic
                 if response.status_code == 404:
                     return {"status": "not_found"}
                     
@@ -50,17 +52,6 @@ class QdrantService:
         return res.get("status") == "ok" or res.get("result") is True
 
     async def upsert_points(self, collection_name: str, points: List[Dict[str, Any]]) -> bool:
-        """
-        points list format:
-        [
-            {
-                "id": str(uuid.uuid4()),
-                "vector": [0.1, 0.2, ...],
-                "payload": {"text": "chunk text", "metadata": {...}}
-            }
-        ]
-        """
-        # Ensure collection exists before upserting
         exists = await self.collection_exists(collection_name)
         if not exists:
             vector_size = len(points[0]["vector"]) if points else 768
@@ -73,9 +64,6 @@ class QdrantService:
     async def search_points(
         self, collection_name: str, query_vector: List[float], limit: int = 5, qdrant_filter: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
-        """
-        Searches for similar vectors. Returns results containing payload and similarity score.
-        """
         exists = await self.collection_exists(collection_name)
         if not exists:
             return []
@@ -109,3 +97,18 @@ class QdrantService:
         }
         res = await self._request("POST", f"/collections/{collection_name}/points/delete?wait=true", payload)
         return res.get("status") == "ok"
+
+class QdrantVectorStoreManager:
+    def __init__(self):
+        self.client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT)
+        self.collection_name = settings.QDRANT_COLLECTION
+
+    def get_vector_store(self) -> QdrantVectorStore:
+        return QdrantVectorStore(
+            client=self.client,
+            collection_name=self.collection_name,
+            enable_hybrid=False
+        )
+
+    def get_client(self) -> QdrantClient:
+        return self.client

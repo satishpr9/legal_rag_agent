@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from app.services.embedding import GeminiEmbeddingClient
 from app.services.qdrant_service import QdrantService
+from app.core.config import settings
 from rank_bm25 import BM25Okapi
 import re
 
@@ -57,6 +58,48 @@ class LegalRetrievalService:
             
         return search_query
 
+    async def _fetch_parent_context(
+        self, leaf_results: List[Dict[str, Any]]
+    ) -> Dict[str, str]:
+        """
+        For leaf nodes that have a parent_node_id, fetches the parent node's text
+        from Qdrant to provide broader context to the LLM.
+        Returns a mapping of parent_node_id -> parent_text.
+        """
+        parent_ids = set()
+        for result in leaf_results:
+            parent_id = result.get("parent_node_id")
+            if parent_id:
+                parent_ids.add(parent_id)
+
+        if not parent_ids:
+            return {}
+
+        parent_texts = {}
+        collection_name = settings.QDRANT_COLLECTION
+
+        for parent_id in parent_ids:
+            # Search for the parent node by its node_id in payload
+            qdrant_filter = {
+                "must": [
+                    {"key": "node_id", "match": {"value": parent_id}},
+                    {"key": "node_type", "match": {"value": "parent"}}
+                ]
+            }
+            # Use a zero vector since we're filtering by ID, not by similarity
+            zero_vector = [0.0] * settings.EMBEDDING_DIMENSION
+            results = await self.qdrant_service.search_points(
+                collection_name=collection_name,
+                query_vector=zero_vector,
+                limit=1,
+                qdrant_filter=qdrant_filter
+            )
+            if results:
+                payload = results[0].get("payload", {})
+                parent_texts[parent_id] = payload.get("text", "")
+
+        return parent_texts
+
     async def retrieve_context(
         self, 
         query: str, 
@@ -64,28 +107,33 @@ class LegalRetrievalService:
         filters: dict = None
     ) -> List[Dict[str, Any]]:
         """
-        Embeds the query and searches Qdrant for relevant legal contexts.
-        Uses Hybrid Search logic: over-fetches candidates via vector search and re-ranks them 
-        based on BM25 sparse matching.
+        Hybrid retrieval with hierarchical parent context:
+        1. Expand acronyms and embed query
+        2. Over-fetch leaf candidates via dense vector search
+        3. Re-rank with BM25 sparse matching
+        4. Fetch parent context for top results (small-to-big retrieval)
         """
         # Step 1: Expand acronyms and embed search query
         search_query = self.expand_query(query)
         query_vector = await self.embedding_client.get_embedding(search_query)
         
-        # Step 2: Over-fetch candidates using Vector Search (fetch 15x of limit to ensure good coverage)
-        collection_name = "legal_documents"
+        # Step 2: Over-fetch leaf candidates using Vector Search
+        # Only search leaf nodes (which have real embeddings)
+        collection_name = settings.QDRANT_COLLECTION
         candidate_limit = max(limit * 15, 50)
         
-        qdrant_filter = None
+        # Build filter: always filter for leaf nodes, plus any user-supplied filters
+        must_clauses = [
+            {"key": "node_type", "match": {"value": "leaf"}}
+        ]
         if filters:
-            must_clauses = []
             for k, v in filters.items():
                 if isinstance(v, list) and v:
                     must_clauses.append({"key": k, "match": {"any": v}})
                 elif v:
                     must_clauses.append({"key": k, "match": {"value": v}})
-            if must_clauses:
-                qdrant_filter = {"must": must_clauses}
+        
+        qdrant_filter = {"must": must_clauses}
                 
         search_results = await self.qdrant_service.search_points(
             collection_name=collection_name,
@@ -105,8 +153,9 @@ class LegalRetrievalService:
             payload = point.get("payload", {})
             semantic_score = point.get("score", 0.0)
             
-            # Text to run BM25 against (give extra weight to section headers by repeating them)
-            header = payload.get("estimated_section", "")
+            # Text to run BM25 against
+            # Use section header info from metadata if available
+            header = payload.get("estimated_section", "") or payload.get("source_file", "")
             content = payload.get("text", "")
             bm25_text = f"{header} {header} {content}"
             tokenized_corpus.append(self._tokenize(bm25_text))
@@ -121,7 +170,9 @@ class LegalRetrievalService:
                 "filename": filename,
                 "estimated_section": header or "General",
                 "page_number": payload.get("page_number", 1),
-                "chunk_index": payload.get("chunk_index")
+                "chunk_index": payload.get("chunk_index"),
+                "node_id": payload.get("node_id"),
+                "parent_node_id": payload.get("parent_node_id"),
             })
             
         # Step 4: Calculate BM25 scores
@@ -141,5 +192,15 @@ class LegalRetrievalService:
             
         # Step 5: Sort by hybrid score descending and slice to limit
         parsed_results.sort(key=lambda x: x["score"], reverse=True)
-        return parsed_results[:limit]
+        top_results = parsed_results[:limit]
 
+        # Step 6: Fetch parent context for top results (small-to-big retrieval)
+        parent_texts = await self._fetch_parent_context(top_results)
+
+        # Enrich results with parent context
+        for result in top_results:
+            parent_id = result.get("parent_node_id")
+            if parent_id and parent_id in parent_texts:
+                result["parent_context"] = parent_texts[parent_id]
+
+        return top_results

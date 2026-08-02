@@ -93,7 +93,12 @@ class PromptBuilder:
             formatted_context += f"Document: {doc_name}\n"
             formatted_context += f"Section: {sec}\n"
             formatted_context += f"Page: {page}\n"
-            formatted_context += f"Content: {chunk['text']}\n\n"
+            formatted_context += f"Content: {chunk['text']}\n"
+            # Include broader parent context from hierarchical chunking if available
+            parent_ctx = chunk.get("parent_context")
+            if parent_ctx:
+                formatted_context += f"Broader Section Context: {parent_ctx}\n"
+            formatted_context += "\n"
 
         if not formatted_context.strip():
             formatted_context = "No direct matching document chunks found in workspace retrieval.\n"

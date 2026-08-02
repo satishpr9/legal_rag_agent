@@ -1,42 +1,33 @@
 import asyncio
 from typing import List
-from sentence_transformers import SentenceTransformer
 
-_GLOBAL_MODEL = None
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from app.core.config import settings
+
+_GLOBAL_EMBED_MODEL = None
 
 class GeminiEmbeddingClient:
     def __init__(self):
-        # We load the nomic-embed-text-v1.5 model for high-quality legal embeddings
-        self.model_name = "nomic-ai/nomic-embed-text-v1.5"
-        
-    def _get_model(self):
-        global _GLOBAL_MODEL
-        if _GLOBAL_MODEL is None:
-            try:
-                _GLOBAL_MODEL = SentenceTransformer(self.model_name, local_files_only=True, trust_remote_code=True)
-            except Exception:
-                _GLOBAL_MODEL = SentenceTransformer(self.model_name, trust_remote_code=True)
-        return _GLOBAL_MODEL
-        
+        self.model_name = settings.EMBEDDING_MODEL
+
+    def _get_model(self) -> HuggingFaceEmbedding:
+        global _GLOBAL_EMBED_MODEL
+        if _GLOBAL_EMBED_MODEL is None:
+            _GLOBAL_EMBED_MODEL = HuggingFaceEmbedding(
+                model_name=self.model_name,
+                trust_remote_code=True,
+            )
+        return _GLOBAL_EMBED_MODEL
+
+    def get_llama_index_embedding(self) -> HuggingFaceEmbedding:
+        return self._get_model()
+
     async def get_embedding(self, text: str) -> List[float]:
-        """
-        Generates embedding for a single string.
-        """
-        loop = asyncio.get_running_loop()
-        embedding = await loop.run_in_executor(
-            None, lambda: self._get_model().encode(text, convert_to_numpy=True).tolist()
+        return await asyncio.get_running_loop().run_in_executor(
+            None, lambda: self._get_model()._get_text_embedding(text)
         )
-        return embedding
 
     async def get_embeddings_batch(self, texts: List[str]) -> List[List[float]]:
-        """
-        Generates embeddings for a batch of strings.
-        """
-        if not texts:
-            return []
-            
-        loop = asyncio.get_running_loop()
-        embeddings = await loop.run_in_executor(
-            None, lambda: self._get_model().encode(texts, convert_to_numpy=True).tolist()
+        return await asyncio.get_running_loop().run_in_executor(
+            None, lambda: self._get_model()._get_text_embeddings(texts)
         )
-        return embeddings

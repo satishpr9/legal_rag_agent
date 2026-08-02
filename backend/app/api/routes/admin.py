@@ -143,7 +143,7 @@ async def delete_document(
         from app.services.qdrant_service import QdrantService
         from app.core.config import settings
         qdrant_service = QdrantService()
-        collection_name = doc.qdrant_collection_name or settings.QDRANT_COLLECTION_NAME
+        collection_name = doc.qdrant_collection_name or settings.QDRANT_COLLECTION
         await qdrant_service.delete_document_points(collection_name, document_id)
     except Exception:
         pass

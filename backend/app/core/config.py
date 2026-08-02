@@ -32,6 +32,17 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4o-mini"
     LLAMA_CLOUD_API_KEY: Optional[str] = None
 
+    # LlamaIndex Ingestion Pipeline
+    LLAMA_PARSE_PREMIUM_MODE: bool = True
+    EMBEDDING_MODEL: str = "nomic-ai/nomic-embed-text-v1.5"
+    EMBEDDING_DIMENSION: int = 768
+    QDRANT_HOST: str = "localhost"
+    QDRANT_PORT: int = 6333
+    QDRANT_COLLECTION: str = "legal_documents"
+    CHUNK_SIZE_PARENT: int = 2048
+    CHUNK_SIZE_CHILD: int = 512
+    CHUNK_SIZE_LEAF: int = 128
+
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 
 settings = Settings()
