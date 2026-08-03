@@ -1,27 +1,24 @@
 import os
 from typing import List, Dict
 from llama_index.core.schema import Document as LIDocument
-from llama_parse import LlamaParse
+from liteparse import LiteParse
 from docx import Document as DocxDocument
 from app.core.config import settings
 
 class DocumentParser:
     def __init__(self):
-        self.llama_parser = LlamaParse(
-            api_key=settings.LLAMA_CLOUD_API_KEY,
-            result_type="markdown",
-            premium_mode=settings.LLAMA_PARSE_PREMIUM_MODE,
-            system_prompt="This is a legal document. Carefully preserve section numbering, tables, schedules, two-column layouts, and Roman numeral sections. Ensure exact text fidelity."
+        self.parser = LiteParse(
+            output_format="markdown"
         )
 
     def parse_pdf_pages(self, file_path: str) -> List[LIDocument]:
-        parsed_docs = self.llama_parser.load_data(file_path)
+        result = self.parser.parse(file_path)
         filename = os.path.basename(file_path)
         docs = []
-        for i, doc in enumerate(parsed_docs):
-            page_num = doc.metadata.get("page_number", i + 1) if doc.metadata else i + 1
+        for page in result.pages:
+            page_num = page.page_num
             docs.append(LIDocument(
-                text=doc.text,
+                text=page.text,
                 metadata={
                     "page_number": page_num,
                     "source_file": filename,

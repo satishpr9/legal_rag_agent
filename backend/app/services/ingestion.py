@@ -91,7 +91,7 @@ class DocumentIngestionManager:
     async def ingest_document(self, document_id: int, file_path: str) -> None:
         """
         LlamaIndex-native ingestion pipeline:
-        1. Parse document via LlamaParse → LlamaIndex Documents
+        1. Parse document via LiteParse → LlamaIndex Documents
         2. Extract LLM metadata (case_name, court, date, statute_reference)
         3. Hierarchical chunking → parent/child/leaf TextNodes
         4. Batch embed leaf nodes via HuggingFaceEmbedding

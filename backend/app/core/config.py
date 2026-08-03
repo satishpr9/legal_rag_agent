@@ -30,10 +30,8 @@ class Settings(BaseSettings):
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-4o-mini"
-    LLAMA_CLOUD_API_KEY: Optional[str] = None
 
     # LlamaIndex Ingestion Pipeline
-    LLAMA_PARSE_PREMIUM_MODE: bool = True
     EMBEDDING_MODEL: str = "nomic-ai/nomic-embed-text-v1.5"
     EMBEDDING_DIMENSION: int = 768
     QDRANT_HOST: str = "localhost"
